@@ -1,0 +1,44 @@
+{
+  "name": "electron-quick-start",
+  "version": "1.0.0",
+  "description": "A minimal Electron application",
+  "main": "main.js",
+  "scripts": {
+    "start": "signalhub listen -p 8080 & PODUSER=Mikeal DEBUG=* electron . & DEBUG=* PODUSER=Anna electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/electron/electron-quick-start.git"
+  },
+  "keywords": [
+    "Electron",
+    "quick",
+    "start",
+    "tutorial"
+  ],
+  "author": "GitHub",
+  "license": "CC0-1.0",
+  "bugs": {
+    "url": "https://github.com/electron/electron-quick-start/issues"
+  },
+  "homepage": "https://github.com/electron/electron-quick-start#readme",
+  "devDependencies": {
+    "beefy": "^2.1.8",
+    "electron-prebuilt": "^1.3.2"
+  },
+  "dependencies": {
+    "bel": "^4.4.2",
+    "bittorrent-tracker": "^8.0.7",
+    "browserify": "^13.1.0",
+    "debug": "^2.2.0",
+    "electron-default-menu": "^1.0.0",
+    "electron-webrtc": "^0.2.6",
+    "hat": "0.0.3",
+    "lodash": "^4.14.1",
+    "readable-stream": "^2.1.4",
+    "recordrtc": "^5.3.8",
+    "signalhub": "^4.7.4",
+    "simple-peer": "^6.0.4",
+    "webrtc-swarm": "^2.6.1"
+  }
+}

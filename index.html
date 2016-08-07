@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Peer Call</title>
+
+    <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+
+    <script src="vendor/jquery-2.2.4.js"></script>
+    <link rel="stylesheet" href="vendor/semantic-ui/semantic.min.css" />
+    <script src="vendor/semantic-ui/semantic.min.js"></script>
+    <link rel="stylesheet" href="vendor/font-awesome.min.css" />
+
+    <!-- Insert this line after script imports -->
+    <script>if (window.module) module = window.module;</script>
+    <style>
+      .join-button {
+        position: absolute;
+        top: 0.78575em;
+        right: 0.5em;
+      }
+      .mute-button {
+        position: absolute;
+        top: 0.4em;
+        right: 0.5em;
+      }
+      div.card {
+        width:200px!important;
+      }
+      .main.container {
+        margin-top: 55px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ui fixed inverted menu">
+      <div class="ui container">
+        <a href="#" class="header item">
+          <i class="phone icon" aria-hidden="true"></i>
+          PeerCall          
+        </a>
+        <!--<a href="#" class="item">Home</a>
+        <div class="ui simple dropdown item">
+          Dropdown <i class="dropdown icon"></i>
+          <div class="menu">
+            <a class="item" href="#">Link Item</a>
+            <a class="item" href="#">Link Item</a>
+            <div class="divider"></div>
+            <div class="header">Header Item</div>
+            <div class="item">
+              <i class="dropdown icon"></i>
+              Sub Menu
+              <div class="menu">
+                <a class="item" href="#">Link Item</a>
+                <a class="item" href="#">Link Item</a>
+              </div>
+            </div>
+            <a class="item" href="#">Link Item</a>
+          </div>-->
+        </div>
+        <button class="ui tiny toggle button mute-button">Mute</button>
+
+      </div>
+    </div>
+    <div class="ui main text container">
+      <div class="ui special cards"></div>
+    </div>
+    
+  </body>
+
+  <script>
+    if (window.process && window.process.type === 'renderer') {
+      require('./lib/menus')(require('electron').remote.Menu, true)
+    } else {
+      var fileref = document.createElement('script')
+      fileref.setAttribute("type","text/javascript")
+      fileref.setAttribute("src", 'bundle.js')
+      document.getElementsByTagName("head")[0].appendChild(fileref)
+    }
+  </script>
+
+  <script>
+    
+  </script>
+
+  <script>
+    // hack from feross, not sure if it works.
+    // setTimeout(function () {
+    //   if (windows.main.isMinimized()) {
+    //     windows.main.restore()
+    //   }
+    //   windows.main.show()
+    // }, 100)
+
+
+    // end
+
+    // views = {}
+    // views.microphone = funk`
+    //   <div class="ui selection dropdown">
+    //     <input type="hidden" name="microphone">
+    //     <i class="dropdown icon"></i>
+    //     <div class="default text">Select Microphone...</div>
+    //     <div class="menu">
+    //       ${sources => {
+    //         return sources.map(funk`
+    //           <div class="item" 
+    //                data-value="${s => s.id}">${s => s.label}</div>
+    //           `)
+    //       }}
+    //     </div>
+    //   </div>
+    // `
+
+    // MediaStreamTrack.getSources((sources) => {
+    //   var filter = s => s.kind === 'audio' && s.label !== 'Default'
+    //   var audioSources = sources.filter(filter)
+    //   console.log(audioSources)
+    //   var inputSelection = views.microphone(audioSources)
+    //   console.log(inputSelection)
+    //   document.body.appendChild(inputSelection)
+    //   $('.ui.dropdown').dropdown()
+
+    //   function record () {
+    //     var input = document.querySelector('input[name=microphone]').value
+    //     if (!input) return alert('Please select a microphone input.')
+
+    //     var context = new AudioContext()
+
+    //     var audioOption = {optional: [{ sourceId: input }] }
+
+    //     function success (media) {
+    //       var test = fs.createWriteStream(path.join(__dirname, 'test'))
+
+    //       var record = recorder(media, {mimeType: 'audio/webm;codecs=opus'})
+
+    //       record.pipe(test)
+    //       record.on('data', d => console.log('data', d.length))
+    //       record.stop = () => {
+    //         record.once('data', d => {
+    //           record.emit('end')
+    //           console.log("finished")
+    //         })
+    //         record.recorder.stop()
+    //       }
+
+    //       // setTimeout(() => {
+    //       //   record.stop()
+    //       // }, 5000)
+    //     }
+    //     navigator.webkitGetUserMedia({audio: audioOption}, success, err => {throw err})
+    //   }
+
+    //   document.body.appendChild(bel`<button class="ui button">Record</button>`)
+    //   document.body.onclick = function (ev) {
+    //     if (ev.target.tagName !== 'BUTTON') return
+    //     if (ev.target.textContent === 'Record') {
+    //       record()
+    //       return
+    //     }
+    //   }
+    // })
+  </script>
+  
+  <script>
+    
+    
+  </script>
+</html>
