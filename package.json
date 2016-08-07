@@ -1,27 +1,15 @@
 {
-  "name": "electron-quick-start",
-  "version": "1.0.0",
-  "description": "A minimal Electron application",
+  "name": "peer-call",
+  "version": "0.1.0",
+  "description": "Free and reliable audio calls for everyone.",
   "main": "main.js",
   "scripts": {
-    "start": "signalhub listen -p 8080 & PODUSER=Mikeal DEBUG=* electron . & DEBUG=* PODUSER=Anna electron ."
+    "start": "signalhub listen -p 8080 & PODUSER=Mikeal DEBUG=* electron . & DEBUG=* PODUSER=Anna electron .",
+    "web": "browserify renderer.js > bundle.js && beefy renderer.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/electron/electron-quick-start.git"
-  },
-  "keywords": [
-    "Electron",
-    "quick",
-    "start",
-    "tutorial"
-  ],
-  "author": "GitHub",
-  "license": "CC0-1.0",
-  "bugs": {
-    "url": "https://github.com/electron/electron-quick-start/issues"
-  },
-  "homepage": "https://github.com/electron/electron-quick-start#readme",
+  "keywords": [],
+  "author": "Mikeal Rogers <mikeal.rogers@gmail.com> (http://www.mikealrogers.com)",
+  "license": "Apache-2.0",
   "devDependencies": {
     "beefy": "^2.1.8",
     "electron-prebuilt": "^1.3.2"
