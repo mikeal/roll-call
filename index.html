@@ -8,8 +8,8 @@
 
     <script src="vendor/jquery-2.2.4.js"></script>
     <link rel="stylesheet" href="vendor/semantic-ui/semantic.min.css" />
-    <script src="vendor/semantic-ui/semantic.min.js"></script>
     <link rel="stylesheet" href="vendor/font-awesome.min.css" />
+    <script src="node_modules/ipfs/dist/index.js"></script>
 
     <!-- Insert this line after script imports -->
     <script>if (window.module) module = window.module;</script>
@@ -69,14 +69,10 @@
   </body>
 
   <script>
-    if (window.process && window.process.type === 'renderer') {
-      require('./lib/menus')(require('electron').remote.Menu, true)
-    } else {
-      var fileref = document.createElement('script')
-      fileref.setAttribute("type","text/javascript")
-      fileref.setAttribute("src", 'bundle.js')
-      document.getElementsByTagName("head")[0].appendChild(fileref)
-    }
+    var fileref = document.createElement('script')
+    fileref.setAttribute("type","text/javascript")
+    fileref.setAttribute("src", 'bundle.js')
+    document.getElementsByTagName("head")[0].appendChild(fileref)
   </script>
 
   <script>
