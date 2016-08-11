@@ -65,12 +65,14 @@
     <div class="ui main text container">
       <div class="ui special cards"></div>
     </div>
-    
   </body>
 
   <script>
+    window.audioOutput = new AudioContext()
+
     if (window.process && window.process.type === 'renderer') {
       require('./lib/menus')(require('electron').remote.Menu, true)
+      require('./renderer')
     } else {
       var fileref = document.createElement('script')
       fileref.setAttribute("type","text/javascript")

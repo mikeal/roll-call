@@ -12,3 +12,4 @@ $('.ui.toggle').state({
     active   : 'Muted'
   }
 })
+

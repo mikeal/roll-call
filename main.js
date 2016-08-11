@@ -12,8 +12,11 @@ function createWindow () {
   // Create the browser window.
   mainWindow = new BrowserWindow({width: 1200, height: 700})
 
-  // and load the index.html of the app.
-  mainWindow.loadURL(`file://${__dirname}/index.html?room=test`)
+  if (process.env.PODUSER) {
+    mainWindow.loadURL(`file://${__dirname}/index.html?room=test`)
+  } else {
+    mainWindow.loadURL(`file://${__dirname}/index.html?room=new`)
+  }
 
   // Open the DevTools.
   mainWindow.webContents.openDevTools()
