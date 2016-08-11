@@ -20,7 +20,7 @@ function write (obj, cb) {
   cb = once(cb)
   ipfs.files.createAddStream((err, stream) => {
     if (err) return cb(err)
-    stream.once('error', console.error)
+    stream.once('error', cb)
     stream.write({
       path: 'test',
       content: new Buffer(JSON.stringify(obj))
@@ -34,13 +34,19 @@ function write (obj, cb) {
 }
 
 function get (hash, cb) {
+  cb = once(cb)
   ipfs.files.get(hash, (err, stream) => {
+    console.log('error getting hash', err)
+    if (err) return cb(err)
     let ret = concat((data) => {
+      console.log(data.toString())
       cb(null, JSON.parse(data.toString()))
     })
     stream.once('data', (obj) => {
       obj.content.pipe(ret)
     })
+    stream.on('error', (err) => console.log('stream error', err))
+    stream.on('error', cb)
     ret.on('error', cb)
   })
 }
@@ -75,3 +81,6 @@ function createOffer (cb) {
   })
 }
 
+window.simpleIpfs = {get: get, put: write}
+
+get('QmZTR5bcpQD7cFgTorqxZDYaew1Wqgfbd2ud9QqGPAkK2V', () => {})
