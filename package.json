@@ -20,7 +20,7 @@
   "dependencies": {
     "funky": "^1.4.0",
     "getusermedia": "^2.0.0",
-    "killa-beez": "^1.1.0"
+    "killa-beez": "^1.2.0"
   },
   "devDependencies": {
     "browserify": "^13.1.0",

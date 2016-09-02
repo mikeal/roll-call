@@ -16,11 +16,9 @@ function joinRoom (room) {
     let p = addPerson(audioStream)
     let swarm = createSwarm(signalHost, {stream: audioStream})
     swarm.joinRoom(roomHost, room)
-    swarm.on('peer', peer => {
-      let elem = addPerson(peer.stream, true)
+    swarm.on('stream', stream => {
+      let elem = addPerson(stream, true)
       document.getElementById('audio-container').appendChild(elem)
-      let source = globalOutput.createMediaStreamSource(peer.stream)
-      source.connect(globalOutput.destination)
     })
     document.getElementById('audio-container').appendChild(p)
   })
@@ -59,8 +57,6 @@ const remoteAudio = funky`
 const WIDTH = 290
 const HEIGHT = 49
 let looping
-
-let globalOutput = new AudioContext()
 
 function startLoop () {
   if (looping) return
@@ -105,18 +101,18 @@ function startLoop () {
 
 function addPerson (stream, play) {
   let element = remoteAudio()
-  let volume = globalOutput.createGain()
-  let analyser = globalOutput.createAnalyser()
-  let source = globalOutput.createMediaStreamSource(stream)
+  let context = new AudioContext()
+  let volume = context.createGain()
+  let analyser = context.createAnalyser()
+  let source = context.createMediaStreamSource(stream)
   let volumeSelector = 'input[type=range]'
   let muteSelector = 'input[type=checkbox]'
-
   let muteElement = element.querySelector(muteSelector)
+
   $(muteElement).checkbox('toggle').click((c) => {
     let label = c.target.parentNode.querySelector('label')
     let state = label.textContent
     if (state === 'Mute') {
-      // Unmute
       c.target.parentNode.querySelector('label').textContent = 'Muted'
       element.querySelector(volumeSelector).disabled = true
       stream.getAudioTracks().forEach(t => t.enabled = false)
@@ -142,10 +138,11 @@ function addPerson (stream, play) {
   startLoop()
 
   if (play) {
-    volume.connect(globalOutput.destination)
+    volume.connect(context.destination)
   }
 
   element.stream = stream
+  element.volume = volume
 
   return element
 }
