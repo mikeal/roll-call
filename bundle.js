@@ -100,9 +100,10 @@ function startLoop () {
   looping = true
 }
 
+let context = new AudioContext()
+
 function addPerson (stream, play) {
   let element = remoteAudio()
-  let context = new AudioContext()
   let volume = context.createGain()
   let analyser = context.createAnalyser()
   let source = context.createMediaStreamSource(stream)
