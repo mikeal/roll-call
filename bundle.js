@@ -18,8 +18,16 @@ function joinRoom (room) {
     let swarm = createSwarm(signalHost, {stream: audioStream})
     swarm.joinRoom(roomHost, room)
     swarm.on('stream', stream => {
+      // Hack.
+      let audio = new Audio()
+      audio.src = URL.createObjectURL(stream)
+      stream.publicKey = stream.peer.publicKey
       let elem = addPerson(stream, true)
       document.getElementById('audio-container').appendChild(elem)
+      window._audio = audio
+    })
+    swarm.on('disconnect', pubKey => {
+      $(document.getElementById(`a${pubKey}`)).remove()
     })
     document.getElementById('audio-container').appendChild(p)
   })
@@ -34,7 +42,7 @@ const mainButtons = funky`
 </div>`
 
 const remoteAudio = funky`
-  <div class="card">
+  <div class="card" id="a${id => id}">
     <div style="height:49px;width:290">
       <canvas id="canvas"
         width="290"
@@ -103,7 +111,7 @@ function startLoop () {
 let context = new AudioContext()
 
 function addPerson (stream, play) {
-  let element = remoteAudio()
+  let element = remoteAudio(stream.publicKey)
   let volume = context.createGain()
   let analyser = context.createAnalyser()
   let source = context.createMediaStreamSource(stream)
