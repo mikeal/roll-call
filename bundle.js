@@ -8,6 +8,7 @@ let signalHost = 'https://signalexchange.now.sh'
 let roomHost = 'https://roomexchange.now.sh'
 
 function joinRoom (room) {
+  room = `peer-call:${room}`
   let mediaopts = { audio: true, video: false }
   getUserMedia(mediaopts, (err, audioStream) => {
     if (err) return console.error(err)
@@ -123,7 +124,6 @@ function addPerson (stream, play) {
     } else {
       c.target.parentNode.querySelector('label').textContent = 'Mute'
       element.querySelector(volumeSelector).disabled = false
-      console.log('unmuting')
       stream.getAudioTracks().forEach(t => t.enabled = true)
     }
   })
@@ -154,7 +154,6 @@ function addPerson (stream, play) {
 function ask () {
   let buttons = mainButtons()
   document.getElementById('main-container').appendChild(buttons)
-  console.log(getRandom())
   document.getElementById('join-party').onclick = () => {
     window.location = '?room=party'
   }
