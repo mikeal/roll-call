@@ -1,0 +1,14 @@
+.twemoji-wrap { position: relative; }
+.twemoji-wrap img { margin: 0 .05em 0 .1em; vertical-align: -0.1em; }
+.twemoji-textarea { overflow-y: scroll; height: 100%; border: 1px solid #ccc; border-radius: 3px; padding: 6px 30px 6px 12px; }
+.twemoji-icon-picker img { position: absolute; top: 6px; right: 21px; }
+.twemoji-picker { z-index: 1; position: absolute; right: 0; background-color: #fff; border: 1px solid #e7e7e7; border-radius: 3px; box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05); }
+.twemoji-icon-picker img, .twemoji-picker img {  -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; cursor: pointer; }
+.twemoji-picker-category { background-color: #e7e7e7; }
+.twemoji-picker-category img { padding: 5px; }
+.twemoji-picker-category .active, .twemoji-picker-category span:hover { border-bottom: 2px solid #728691; }
+.twemoji-picker-category .close { float: right; margin-right: 2px; font-size: 25px; font-weight: 700; line-height: 1; opacity: .5; cursor: pointer; }
+.twemoji-picker-category .close:hover { opacity: .3 }
+.twemoji-list { overflow-y: scroll; }
+.twemoji-list img { padding: 5px; margin-top: 2px; }
+.twemoji-list img:hover { background-color: #e7e7e7; }

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Peer Call Test</title>
+    <script src="vendor/jquery-2.2.4.js"></script>
+    <link rel="stylesheet" href="vendor/semantic.min.css" />
+    <script src="vendor/semantic.min.js"></script>
+
+  </head>
+  <body>
+    <style>
+      .join-button {
+        position: absolute;
+        top: 0.78575em;
+        right: 0.5em;
+      }
+      .mute-button {
+        position: absolute;
+        top: 0.4em;
+        right: 0.5em;
+      }
+      .main.container {
+        margin-top: 55px;
+      }
+      div.volume {
+        display:flex;
+        width:100%;
+      }
+      div.volume input {
+        flex-grow:1;
+        margin-left:1em;
+      }
+      div.join-container {
+        display:flex;
+        width:100%;
+        justify-content:center;
+        margin-top:3em;
+      }
+      div.join-container * {
+
+      }
+      /*input.volume {
+        width: 100%;
+      }*/
+    </style>
+    <a href="https://github.com/mikeal/peer-call"><img style="position: absolute; top: 0; left: 0; border: 0;" src="https://camo.githubusercontent.com/567c3a48d796e2fc06ea80409cc9dd82bf714434/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f6c6566745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_left_darkblue_121621.png"></a>
+    <div id="main-container" class="ui main text container">
+      <div id="audio-container" class="ui special cards"></div>
+    </div>
+  </body>
+
+  <script src="bundle.js"></script>
+
+  </body>
+</html>

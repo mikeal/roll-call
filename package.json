@@ -1,0 +1,30 @@
+{
+  "name": "peer-call",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "beefy index.js:bundle.js --open --index index.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mikeal/peer-call.git"
+  },
+  "keywords": [],
+  "author": "Mikeal Rogers <mikeal.rogers@gmail.com> (http://www.mikealrogers.com)",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/mikeal/peer-call/issues"
+  },
+  "homepage": "https://github.com/mikeal/peer-call#readme",
+  "dependencies": {
+    "funky": "^1.4.0",
+    "getusermedia": "^2.0.0",
+    "killa-beez": "^1.1.0"
+  },
+  "devDependencies": {
+    "browserify": "^13.1.0",
+    "watchify": "^3.7.0",
+    "beefy": "^2.1.8"
+  }
+}
