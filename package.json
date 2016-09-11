@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/mikeal/peer-call#readme",
   "dependencies": {
+    "bel": "^4.4.3",
     "funky": "^1.4.0",
     "getusermedia": "^2.0.0",
     "killa-beez": "^1.2.0",
