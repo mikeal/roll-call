@@ -34,6 +34,18 @@ const recordButton = bel`
 </button>
 `
 
+const playback = bel`
+<div id="playback-container" class="ui items">
+  <div class="ui segment track-container">
+    <div class="ui top attached label">Playback</div>
+    <div class="playback-controls">
+      <i class="icon play large"></i>
+      <input type="range">
+    </div>
+  </div>
+</div>
+`
+
 const recorders = {}
 let recordingStopped = false
 
@@ -42,6 +54,9 @@ function stopRecording (local) {
   if (recordingStopped) return
   recordingStopped = true
   $(recordButton).remove()
+
+  $('#main-container').prepend(playback)
+
   if (local) {
     values(mySwarm.remotes).forEach(remote => {
       remote.stopRecording(err => {
