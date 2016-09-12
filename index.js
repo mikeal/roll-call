@@ -4,7 +4,21 @@ const getUserMedia = require('getusermedia')
 const qs = require('querystring')
 const recordRTC = require('recordrtc')
 const bel = require('bel')
+const WebTorrent = require('webtorrent')
+const streamToBlobURL = require('stream-to-blob-url')
+const blobToBuffer = require('blob-to-buffer')
+
+const byId = id => document.getElementById(id)
 const values = (obj) => Object.keys(obj).map(k => obj[k])
+const torrentClient = new WebTorrent()
+
+function getBlobURL (file, cb) {
+  if (file.createReadStream) {
+    streamToBlobURL(file.createReadStream(), 'audio/wav', cb)
+  } else {
+    cb(null, URL.createObjectURL(file))
+  }
+}
 
 let signalHost = 'https://signalexchange.now.sh'
 let roomHost = 'https://roomexchange.now.sh'
@@ -20,39 +34,80 @@ const recordButton = bel`
 </button>
 `
 
-function stopRecording (cb) {
-  // TODO: stop recording
+const recorders = {}
+let recordingStopped = false
+
+function stopRecording (local) {
   // update the URL
+  if (recordingStopped) return
+  recordingStopped = true
   $(recordButton).remove()
-  values(mySwarm.remotes).forEach(remote => {
-    remote.stopRecording(err => {
-      // TODO: update UI
+  if (local) {
+    values(mySwarm.remotes).forEach(remote => {
+      remote.stopRecording(err => {
+        // TODO: update UI
+      })
     })
-  })
-  myRecorder.stopRecording(audioURL => {
-    let call = document.getElementById('aundefined')
-    let audio = new Audio()
-    let name = call.querySelector('div.header').textContent
-    let download = downloadView()
-    let upload = uploadView()
-    let localTrack = connectAudio(audio, false, localTrackView)
+  }
 
-    let track = trackView({call, name, audio, download, upload, localTrack})
-    document.getElementById('tracks-container').appendChild(track)
-    audio.src = audioURL
+  for (let pubKey in recorders) {
+    let recorder = recorders[pubKey]
+    recorder.stopRecording(audioURL => {
+      let call = document.getElementById(`a${pubKey}`)
+      let audio = new Audio()
+      let localTrack = connectAudio(audio, false, localTrackView)
+      if (pubKey === 'undefined') {
+        $(localTrack).find('span.local-track-title').text('Local Recording')
+      } else {
+        $(localTrack).find('span.local-track-title').text('Monitor Recording')
+      }
+      localTrack.querySelector('a').href = audioURL
 
-    $(call.querySelector('div.header')).remove()
+      let name = call.querySelector('div.header').textContent
 
-    var recordedBlob = myRecorder.getBlob()
-    // record.getDataURL(function(dataURL) { })
-    if (cb && typeof cb === 'function') cb(null)
-  })
+      let download
+      let upload
+      if (pubKey !== 'undefined') {
+        download = downloadView(pubKey)
+        upload = uploadView(pubKey)
+      }
+
+      let track = trackView({call, name, audio, download, upload, localTrack})
+      document.getElementById('tracks-container').appendChild(track)
+      audio.src = audioURL
+
+      $(track.querySelector('div.progress')).progress()
+
+      $(call.querySelector('div.header')).remove()
+
+      if (pubKey === 'undefined') {
+        let recordedBlob = recorder.getBlob()
+        blobToBuffer(recordedBlob, (err, buffer) => {
+          if (err) return console.error(err)
+          let pubKey = mySwarm.publicKey
+          torrentClient.seed(buffer, {name: `${pubKey}.wav`}, torrent => {
+            // TODO: push seed message.
+            console.log('remotes', values(mySwarm.remotes).length)
+            values(mySwarm.remotes).forEach(remote => {
+              console.log('calling remote')
+
+              remote.getTrack(torrent.magnetURI, percent => {
+                let pubKey = remote.publicKey
+                let progress = byId(`c${pubKey}`).querySelector('div.progress')
+                progress.setAttribute('data-percent', percent)
+                $(progress).progress({percent})
+              })
+            })
+          })
+        })
+      }
+    })
+  }
 }
 
 function startRecording (local) {
   console.log('startRecording')
   let opts = {disableLogs: true, type: 'audio'}
-  let record = recordRTC(myMicrophone, opts)
 
   if (local) {
     values(mySwarm.remotes).forEach(remote => {
@@ -64,9 +119,14 @@ function startRecording (local) {
       })
     })
   }
-  record.startRecording()
+  recorders['undefined'] = recordRTC(myMicrophone, opts)
+  Object.keys(mySwarm.peers).forEach(k => {
+    recorders[k] = recordRTC(mySwarm.peers[k].audioStream, opts)
+  })
+  values(recorders).forEach(rec => rec.startRecording())
+
   recordButton.innerHTML = `<i class="stop icon"></i> Stop`
-  recordButton.onclick = () => stopRecording()
+  recordButton.onclick = stopRecording
   myRecorder = record
 }
 
@@ -87,6 +147,7 @@ function joinRoom (room) {
       // Hack.
       let audio = new Audio()
       audio.src = URL.createObjectURL(stream)
+      stream.peer.audioStream = stream
       stream.publicKey = stream.peer.publicKey
       let elem = addPerson(stream, true)
       elem.audioStream = stream
@@ -109,6 +170,49 @@ function joinRoom (room) {
     }
     swarm.rpc.stopRecording = cb => {
       stopRecording()
+    }
+    swarm.rpc.getTrack = (torrent, incr) => {
+      console.log('getTrack', torrent)
+      torrentClient.add(torrent, _torrent => {
+        let id = _torrent.name.slice(0, _torrent.name.lastIndexOf('.'))
+        let timeout
+        function tick () {
+          let file = _torrent.files[0]
+          let name = file.name
+          let pubKey = name.slice(0, name.lastIndexOf('.'))
+          if (pubKey === mySwarm.publicKey) return // My torrent.
+          let progress = byId(`b${pubKey}`).querySelector('div.progress')
+          let percent = (_torrent.received / _torrent.length) * 100
+          progress.setAttribute('data-percent', percent)
+          $(progress).progress({percent})
+          incr(percent)
+          if (percent !== 100) timeout = setTimeout(tick, 2000)
+        }
+        setTimeout(tick, 2000)
+
+        getBlobURL(_torrent.files[0], (err, url) => {
+          if (err) return console.error(err)
+          // TODO: Wire up the track.
+          if (timeout) clearTimeout(timeout)
+          incr(100)
+
+          let file = _torrent.files[0]
+          let name = file.name
+          let pubKey = name.slice(0, name.lastIndexOf('.'))
+          let progress = byId(`b${pubKey}`).querySelector('div.progress')
+          progress.setAttribute('data-percent', 100)
+          $(progress).progress({percent: 100})
+
+          let audio = new Audio()
+          let localTrack = connectAudio(audio, false, localTrackView)
+          audio.src = url
+
+          $(localTrack).find('span.local-track-title').text('Local Recording')
+          localTrack.querySelector('a').href = url
+          progress.parentNode.appendChild(localTrack)
+          $(progress).remove()
+        })
+      })
     }
   })
 }
@@ -147,11 +251,11 @@ const remoteAudio = funky`
 const downloadView = funky`
 <div class="card" id="b${id => id}">
   <div class="content">
-    <div class="ui active progress">
+    <div class="ui active progress" data-percent="0">
       <div class="bar">
         <div class="progress"></div>
       </div>
-      <div class="label">Download Their Recording</div>
+      <div class="label">Downloading Their Recording</div>
     </div>
   </div>
 </div>
@@ -159,11 +263,11 @@ const downloadView = funky`
 const uploadView = funky`
 <div class="card" id="c${id => id}">
   <div class="content">
-    <div class="ui active progress">
+    <div class="ui active progress" data-percent="0">
       <div class="bar">
         <div class="progress"></div>
       </div>
-      <div class="label">Uploading My Audio</div>
+      <div class="label">Sending My Audio</div>
     </div>
   </div>
 </div>
@@ -183,6 +287,10 @@ const trackView = funky`
 
 const localTrackView = funky`
   <div class="card" id="d${id => id}">
+    <span class="local-track-title"></span>
+    <a download="track.wav" class="download-link">
+      <i data-content="Download" class="save link icon"></i>
+    </a>
     <div style="height:49px;width:290">
       <canvas id="canvas"
         width="290"
@@ -345,3 +453,4 @@ function getRandom () {
   let s = toBase64(key)
   return s.slice(0, s.length - 1)
 }
+

@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "beefy index.js:bundle.js --open --index index.html"
+    "start": "beefy index.js:bundle.js --index index.html"
   },
   "repository": {
     "type": "git",
@@ -19,10 +19,13 @@
   "homepage": "https://github.com/mikeal/peer-call#readme",
   "dependencies": {
     "bel": "^4.4.3",
+    "blob-to-buffer": "^1.2.6",
     "funky": "^1.4.0",
     "getusermedia": "^2.0.0",
     "killa-beez": "^1.2.0",
-    "recordrtc": "^5.4.0"
+    "recordrtc": "^5.4.0",
+    "stream-to-blob-url": "^2.1.0",
+    "webtorrent": "^0.96.4"
   },
   "devDependencies": {
     "browserify": "^13.1.0",
