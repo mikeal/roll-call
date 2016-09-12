@@ -73,7 +73,12 @@ function stopRecording (local) {
       }
 
       let track = trackView({call, name, audio, download, upload, localTrack})
-      document.getElementById('tracks-container').appendChild(track)
+      if (pubKey === 'undefined') {
+        $(document.getElementById('tracks-container')).prepend(track)
+      } else {
+        $(document.getElementById('tracks-container')).append(track)
+      }
+
       audio.src = audioURL
 
       $(track.querySelector('div.progress')).progress()
@@ -86,11 +91,7 @@ function stopRecording (local) {
           if (err) return console.error(err)
           let pubKey = mySwarm.publicKey
           torrentClient.seed(buffer, {name: `${pubKey}.wav`}, torrent => {
-            // TODO: push seed message.
-            console.log('remotes', values(mySwarm.remotes).length)
             values(mySwarm.remotes).forEach(remote => {
-              console.log('calling remote')
-
               remote.getTrack(torrent.magnetURI, percent => {
                 let pubKey = remote.publicKey
                 let progress = byId(`c${pubKey}`).querySelector('div.progress')
@@ -106,15 +107,12 @@ function stopRecording (local) {
 }
 
 function startRecording (local) {
-  console.log('startRecording')
   let opts = {disableLogs: true, type: 'audio'}
 
   if (local) {
     values(mySwarm.remotes).forEach(remote => {
-      console.log('calling remote record')
       remote.record(err => {
         if (err) return console.error(err)
-        console.log('calling remote record finished')
         // TODO: add the recording animation to this person
       })
     })
@@ -164,7 +162,6 @@ function joinRoom (room) {
 
     // Setup RPC Services
     swarm.rpc.record = cb => {
-      console.log('rpc record')
       startRecording(false)
       cb(null)
     }
@@ -172,7 +169,6 @@ function joinRoom (room) {
       stopRecording()
     }
     swarm.rpc.getTrack = (torrent, incr) => {
-      console.log('getTrack', torrent)
       torrentClient.add(torrent, _torrent => {
         let id = _torrent.name.slice(0, _torrent.name.lastIndexOf('.'))
         let timeout
@@ -199,18 +195,19 @@ function joinRoom (room) {
           let file = _torrent.files[0]
           let name = file.name
           let pubKey = name.slice(0, name.lastIndexOf('.'))
-          let progress = byId(`b${pubKey}`).querySelector('div.progress')
-          progress.setAttribute('data-percent', 100)
-          $(progress).progress({percent: 100})
+          let container = byId(`b${pubKey}`).parentNode
 
           let audio = new Audio()
           let localTrack = connectAudio(audio, false, localTrackView)
           audio.src = url
 
+          container.querySelector('input[type=radio]').checked = false
+
           $(localTrack).find('span.local-track-title').text('Local Recording')
           localTrack.querySelector('a').href = url
-          progress.parentNode.appendChild(localTrack)
-          $(progress).remove()
+          $(container).prepend(localTrack)
+          $(byId(`b${pubKey}`)).remove()
+
         })
       })
     }
@@ -249,7 +246,7 @@ const remoteAudio = funky`
 `
 
 const downloadView = funky`
-<div class="card" id="b${id => id}">
+<div class="card download-card" id="b${id => id}">
   <div class="content">
     <div class="ui active progress" data-percent="0">
       <div class="bar">
@@ -261,7 +258,7 @@ const downloadView = funky`
 </div>
 `
 const uploadView = funky`
-<div class="card" id="c${id => id}">
+<div class="card upload-card" id="c${id => id}">
   <div class="content">
     <div class="ui active progress" data-percent="0">
       <div class="bar">
@@ -287,7 +284,10 @@ const trackView = funky`
 
 const localTrackView = funky`
   <div class="card" id="d${id => id}">
-    <span class="local-track-title"></span>
+    <div class="local-track-title">
+      <input type="radio" checked="checked" />
+      <span class="local-track-title"></span>
+    </div>
     <a download="track.wav" class="download-link">
       <i data-content="Download" class="save link icon"></i>
     </a>
