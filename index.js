@@ -157,9 +157,6 @@ function joinRoom (room) {
     let swarm = createSwarm(signalHost, {stream: audioStream})
     swarm.joinRoom(roomHost, room)
     swarm.on('stream', stream => {
-      // Hack.
-      let audio = new Audio()
-      audio.src = URL.createObjectURL(stream)
       stream.peer.audioStream = stream
       stream.publicKey = stream.peer.publicKey
       let elem = addPerson(stream, true)
@@ -377,17 +374,13 @@ function startLoop () {
 }
 
 let context = new AudioContext()
+const waudio = require('waudio')(context)
 
 function connectAudio (stream, play, view) {
   let element = view(stream.publicKey)
-  let volume = context.createGain()
+  let volume = waudio.gain()
   let analyser = context.createAnalyser()
-  let source
-  if (stream instanceof MediaStream) {
-    source = context.createMediaStreamSource(stream)
-  } else {
-    source = context.createMediaElementSource(stream)
-  }
+  stream = waudio(stream)
 
   let volumeSelector = 'input[type=range]'
   let muteSelector = 'input[type=checkbox]'
@@ -399,19 +392,18 @@ function connectAudio (stream, play, view) {
     if (state === 'Mute') {
       c.target.parentNode.querySelector('label').textContent = 'Muted'
       element.querySelector(volumeSelector).disabled = true
-      stream.getAudioTracks().forEach(t => t.enabled = false)
+      stream.mute()
     } else {
       c.target.parentNode.querySelector('label').textContent = 'Mute'
       element.querySelector(volumeSelector).disabled = false
-      stream.getAudioTracks().forEach(t => t.enabled = true)
+      stream.unmute()
     }
   })
 
   $(element.querySelector(volumeSelector)).change(function () {
-    volume.gain.value = this.value
+    volume.set(this.value)
   })
-  source.connect(volume)
-  volume.connect(analyser)
+  stream.send(volume).send(analyser)
 
   var canvas = element.querySelector('canvas.person')
   canvas.canvasCtx = canvas.getContext("2d")
@@ -422,7 +414,7 @@ function connectAudio (stream, play, view) {
   startLoop()
 
   if (play) {
-    volume.connect(context.destination)
+    volume.output()
   }
 
   element.stream = stream
