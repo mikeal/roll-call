@@ -147,7 +147,8 @@ recordButton.onclick = startRecording
 
 function joinRoom (room) {
   room = `peer-call:${room}`
-  let mediaopts = { audio: true, video: false }
+  let audioopts = { echoCancellation: true, volume: 0.9 }
+  let mediaopts = { audio: audioopts, video: false }
   getUserMedia(mediaopts, (err, audioStream) => {
     if (err) return console.error(err)
     if (!audioStream) return console.error("no audio")
