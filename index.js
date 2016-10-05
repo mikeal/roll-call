@@ -1,15 +1,16 @@
-const createSwarm = require('killa-beez')
+const createSwarm = require('../killa-beez')
 const funky = require('funky')
 const getUserMedia = require('getusermedia')
 const qs = require('querystring')
-const recordRTC = require('recordrtc')
+const mediaRecorder = require('../media-recorder-stream')
 const bel = require('bel')
 const WebTorrent = require('webtorrent')
 const streamToBlobURL = require('stream-to-blob-url')
 const blobToBuffer = require('blob-to-buffer')
+const FileWriteStream = require('filestream/write')
 
 const byId = id => document.getElementById(id)
-const values = (obj) => Object.keys(obj).map(k => obj[k])
+const values = obj => Object.keys(obj).map(k => obj[k])
 const torrentClient = new WebTorrent()
 
 function getBlobURL (file, cb) {
@@ -34,116 +35,79 @@ const recordButton = bel`
 </button>
 `
 
-const playback = bel`
-<div id="playback-container" class="ui items">
-  <div class="ui segment track-container">
-    <div class="ui top attached label">Playback</div>
-    <div class="playback-controls">
-      <i class="icon play large"></i>
-      <input type="range">
-    </div>
-  </div>
-</div>
-`
+function recording (swarm, microphone) {
+  let remotes = []
 
-const recorders = {}
-let recordingStopped = false
+  function startRecording () {
+    let streams = []
+    let files = {}
+    let me = mediaRecorder(microphone, {mimeType: 'audio/webm;codecs=opus'})
+    let writer = FileWriteStream()
+    writer.on('file', file => {
+      console.log('own file created', file)
+    })
+    me.pipe(writer)
+    files[swarm.publicKey] = writer
+    writer.publicKey = swarm.publicKey
+    me.publicKey = swarm.publicKey
+    streams.push(me)
 
-function stopRecording (local) {
-  // update the URL
-  if (recordingStopped) return
-  recordingStopped = true
-  $(recordButton).remove()
-
-  $('#main-container').prepend(playback)
-
-  if (local) {
-    values(mySwarm.remotes).forEach(remote => {
-      remote.stopRecording(err => {
-        // TODO: update UI
+    swarm.on('substream', (stream, id) => {
+      // TODO: check id
+      if (id.slice(0, 'recording:'.length) !== 'recording:') return
+      streams.push(stream)
+      let pubkey = id.slice('recording:'.length)
+      let writer = FileWriteStream()
+      writer.on('file', file => {
+        console.log('substream file created', file)
       })
-    })
-  }
-
-  for (let pubKey in recorders) {
-    let recorder = recorders[pubKey]
-    recorder.stopRecording(audioURL => {
-      let call = document.getElementById(`a${pubKey}`)
-      let audio = new Audio()
-      let localTrack = connectAudio(audio, false, localTrackView)
-      if (pubKey === 'undefined') {
-        $(localTrack).find('span.local-track-title').text('Local Recording')
-      } else {
-        $(localTrack).find('span.local-track-title').text('Monitor Recording')
-      }
-      localTrack.querySelector('a').href = audioURL
-
-      let name = call.querySelector('div.header').textContent
-
-      let download
-      let upload
-      if (pubKey !== 'undefined') {
-        download = downloadView(pubKey)
-        upload = uploadView(pubKey)
-      }
-
-      let track = trackView({call, name, audio, download, upload, localTrack})
-      if (pubKey === 'undefined') {
-        $(document.getElementById('tracks-container')).prepend(track)
-      } else {
-        $(document.getElementById('tracks-container')).append(track)
-      }
-
-      audio.src = audioURL
-
-      $(track.querySelector('div.progress')).progress()
-
-      $(call.querySelector('div.header')).remove()
-
-      if (pubKey === 'undefined') {
-        let recordedBlob = recorder.getBlob()
-        blobToBuffer(recordedBlob, (err, buffer) => {
-          if (err) return console.error(err)
-          let pubKey = mySwarm.publicKey
-          torrentClient.seed(buffer, {name: `${pubKey}.wav`}, torrent => {
-            values(mySwarm.remotes).forEach(remote => {
-              remote.getTrack(torrent.magnetURI, percent => {
-                let pubKey = remote.publicKey
-                let progress = byId(`c${pubKey}`).querySelector('div.progress')
-                progress.setAttribute('data-percent', percent)
-                $(progress).progress({percent})
-              })
-            })
-          })
-        })
-      }
-    })
-  }
-}
-
-function startRecording (local) {
-  let opts = {disableLogs: true, type: 'audio'}
-
-  if (local) {
-    values(mySwarm.remotes).forEach(remote => {
-      remote.record(err => {
-        if (err) return console.error(err)
-        // TODO: add the recording animation to this person
+      stream.on('end', () => {
+        console.log('substream ended')
       })
+      console.log('writer', writer)
+      writer.publicKey = swarm.publicKey
+      stream.pipe(writer)
+      files[pubkey] = writer
+      // TODO: update UI as the file streams
     })
+
+    remotes.forEach(commands => commands.record())
+
+    recordButton.onclick = () => {
+      me.stop()
+      remotes.forEach(commands => commands.stopRecording())
+      $(recordButton).remove()
+    }
+    $('button#record i')
+    .removeClass('unmute')
+    .addClass('stop')
   }
-  recorders['undefined'] = recordRTC(myMicrophone, opts)
-  Object.keys(mySwarm.peers).forEach(k => {
-    recorders[k] = recordRTC(mySwarm.peers[k].audioStream, opts)
+
+  function mkrpc (peer) {
+    // Create RPC services scoped to this peer.
+    let rpc = {}
+    let stream
+    rpc.record = () => {
+      // TODO: grey record button
+      stream = mediaRecorder(microphone, {mimeType: 'audio/webm;codecs=opus'})
+      stream.pipe(peer.meth.stream(`recording:${swarm.publicKey}`))
+      // TODO: keep track of bits sent and update a UI
+    }
+    rpc.stopRecording = () => {
+      stream.stop()
+      // TODO: re-enable record button
+    }
+    peer.meth.commands(rpc, 'recording')
+  }
+
+  swarm.on('peer', mkrpc)
+  values(swarm.peers).forEach(mkrpc)
+  swarm.on('commands:recording', commands => {
+    remotes.push(commands)
   })
-  values(recorders).forEach(rec => rec.startRecording())
 
-  recordButton.innerHTML = `<i class="stop icon"></i> Stop`
-  recordButton.onclick = stopRecording
-  myRecorder = record
+  return startRecording
 }
-
-recordButton.onclick = startRecording
 
 function joinRoom (room) {
   room = `peer-call:${room}`
@@ -172,57 +136,7 @@ function joinRoom (room) {
     document.getElementById('audio-container').appendChild(p)
     document.body.appendChild(recordButton)
 
-    // Setup RPC Services
-    swarm.rpc.record = cb => {
-      startRecording(false)
-      cb(null)
-    }
-    swarm.rpc.stopRecording = cb => {
-      stopRecording()
-    }
-    swarm.rpc.getTrack = (torrent, incr) => {
-      torrentClient.add(torrent, _torrent => {
-        let id = _torrent.name.slice(0, _torrent.name.lastIndexOf('.'))
-        let timeout
-        function tick () {
-          let file = _torrent.files[0]
-          let name = file.name
-          let pubKey = name.slice(0, name.lastIndexOf('.'))
-          if (pubKey === mySwarm.publicKey) return // My torrent.
-          let progress = byId(`b${pubKey}`).querySelector('div.progress')
-          let percent = (_torrent.received / _torrent.length) * 100
-          progress.setAttribute('data-percent', percent)
-          $(progress).progress({percent})
-          incr(percent)
-          if (percent !== 100) timeout = setTimeout(tick, 2000)
-        }
-        setTimeout(tick, 2000)
-
-        getBlobURL(_torrent.files[0], (err, url) => {
-          if (err) return console.error(err)
-          // TODO: Wire up the track.
-          if (timeout) clearTimeout(timeout)
-          incr(100)
-
-          let file = _torrent.files[0]
-          let name = file.name
-          let pubKey = name.slice(0, name.lastIndexOf('.'))
-          let container = byId(`b${pubKey}`).parentNode
-
-          let audio = new Audio()
-          let localTrack = connectAudio(audio, false, localTrackView)
-          audio.src = url
-
-          container.querySelector('input[type=radio]').checked = false
-
-          $(localTrack).find('span.local-track-title').text('Local Recording')
-          localTrack.querySelector('a').href = url
-          $(container).prepend(localTrack)
-          $(byId(`b${pubKey}`)).remove()
-
-        })
-      })
-    }
+    recordButton.onclick = recording(swarm, audioStream)
   })
 }
 const mainButtons = funky`
