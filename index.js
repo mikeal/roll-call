@@ -72,7 +72,7 @@ function addAudioFile (file) {
   let audio = new Audio()
   let button = elem.querySelector('i.play-button')
   audio.src = URL.createObjectURL(file)
-  connectAudio(audio, false, elem)
+  connectAudio(audio, true, elem)
   let play = () => {
     audio.play()
     $(button).removeClass('play').addClass('stop')
