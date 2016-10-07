@@ -1,3 +1,4 @@
+/* global $, requestAnimationFrame, AudioContext, URL */
 const createSwarm = require('killa-beez')
 const funky = require('funky')
 const getUserMedia = require('getusermedia')
