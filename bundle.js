@@ -2652,7 +2652,7 @@ function joinRoom (room) {
       elem.audioStream = stream
       let remotes = values(swarm.peers).length
       elem.querySelector('div.person-name').textContent = `Caller (${remotes})`
-      document.getElementById('audio-container').appendChild(elem)
+      byId('audio-container').appendChild(elem)
     })
     swarm.on('disconnect', pubKey => {
       if (recordingStreams[pubKey]) {
@@ -2713,7 +2713,7 @@ function startLoop () {
     var now = Date.now()
     if (now - lastTime < 50) return
 
-    var elements = [...document.querySelectorAll('canvas.person')]
+    var elements = [...selectall('canvas.person')]
     elements.forEach(drawPerson)
 
     function drawPerson (canvas) {
@@ -2763,7 +2763,7 @@ function connectAudio (stream, play, view) {
 
   let volumeSelector = 'input[type=range]'
   let muteSelector = 'input[type=checkbox]'
-  let muteElement = element.querySelector(muteSelector)
+  let muteElement = selector(muteSelector)
 
   $(muteElement).checkbox('toggle').click((c) => {
     let label = c.target.parentNode.querySelector('label')
