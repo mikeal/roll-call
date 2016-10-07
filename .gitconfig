@@ -1,2 +1,2 @@
 [core]
-  hooksPath = hooks/
+  hooksPath = $GIT_DIR/../hooks
