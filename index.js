@@ -5,9 +5,10 @@ const getUserMedia = require('getusermedia')
 const qs = require('querystring')
 const mediaRecorder = require('../media-recorder-stream')
 const bel = require('bel')
+const dragDrop = require('drag-drop')
 const FileWriteStream = require('filestream/write')
 const context = new AudioContext()
-const waudio = require('../waudio')(context)
+const waudio = require('waudio')(context)
 
 // Convenience functions
 const byId = id => document.getElementById(id)
@@ -27,7 +28,67 @@ const recordButton = bel`
 </button>
 `
 
-const callOutput = new Audio()
+const audioFileView = funky`
+<div class="card">
+  <div style="height:49px;width:290">
+    <canvas id="canvas"
+      width="290"
+      height="49"
+      class="person"
+      >
+    </canvas>
+  </div>
+  <div class="extra content">
+    <div class="header person-name">${name => name}</div>
+    <div class="volume">
+      <i class="icon play play-button"></i>
+      <input type="range" min="0" max="2" step=".05" />
+    </div>
+  </div>
+</div>
+`
+
+class Output {
+  constructor (stream) {
+    this.microphone = context.createMediaStreamSource(stream)
+    this.gainFilter = context.createGain()
+    this.destination = context.createMediaStreamDestination()
+    this.outputStream = this.destination.stream
+    this.microphone.connect(this.gainFilter)
+    this.gainFilter.connect(this.destination)
+    let oldtracks = stream.getAudioTracks()
+    this.outputStream.getAudioTracks().forEach(track => stream.addTrack(track))
+    oldtracks.forEach(track => stream.removeTrack(track))
+    this.stream = stream
+  }
+  add (audio) {
+    audio.connect(this.gainFilter)
+  }
+}
+
+
+function addAudioFile (file) {
+  let elem = audioFileView(file.name)
+  let audio = new Audio()
+  let button = elem.querySelector('i.play-button')
+  audio.src = URL.createObjectURL(file)
+  connectAudio(audio, false, elem)
+  let play = () => {
+    audio.play()
+    $(button).removeClass('play').addClass('stop')
+    button.onclick = stop
+  }
+  let stop = () => {
+    audio.pause()
+    audio.currentTime = 0
+    $(button).removeClass('stop').addClass('play')
+    button.onclick = play
+  }
+  audio.onended = stop
+  button.onclick = play
+  byId('audio-container').appendChild(elem)
+  return elem.volume
+}
 
 function connectRecording (pubkey, stream) {
   let classes = 'spinner loading icon'
@@ -137,12 +198,6 @@ function recording (swarm, microphone) {
   return startRecording
 }
 
-function addTracks (mediastream, audioelem) {
-  let s = context.createMediaStreamDestination(audioelem).stream
-  console.log('tracks', s.getAudioTracks().length)
-  s.getAudioTracks().forEach(track => mediastream.addTrack(track))
-}
-
 function joinRoom (room) {
   room = `peer-call:${room}`
   let audioopts = { echoCancellation: true, volume: 0.9 }
@@ -150,10 +205,9 @@ function joinRoom (room) {
   getUserMedia(mediaopts, (err, audioStream) => {
     if (err) return console.error(err)
     if (!audioStream) return console.error('no audio')
-    let p = addPerson(audioStream)
-    let callOutputStream = audioStream.clone()
-    addTracks(callOutputStream, callOutput)
-    let swarm = createSwarm(signalHost, {stream: callOutputStream})
+    let output = new Output(audioStream.clone())
+    let p = addPerson(output)
+    let swarm = createSwarm(signalHost, {stream: output.stream})
     swarm.joinRoom(roomHost, room)
     swarm.on('stream', stream => {
       stream.peer.audioStream = stream
@@ -174,7 +228,18 @@ function joinRoom (room) {
     document.getElementById('audio-container').appendChild(p)
     document.body.appendChild(recordButton)
 
-    recordButton.onclick = recording(swarm, audioStream)
+    recordButton.onclick = recording(swarm, output.stream)
+
+    dragDrop('body', {
+      onDrop: function (files, pos) {
+        files.forEach(file => {
+          let gain = addAudioFile(file)
+          output.add(gain.inst)
+        })
+      },
+      onDragOver: function () {},
+      onDragLeave: function () {}
+    })
   })
 }
 const mainButtons = funky`
@@ -262,36 +327,44 @@ function startLoop () {
   looping = true
 }
 
+function connectAudio (stream, play, element) {
+  let volume
+  if (stream instanceof Output) {
+    volume = waudio(stream.gainFilter)
+    stream = waudio(stream.stream)
+  } else {
+    stream = waudio(stream)
+    volume = waudio.gain()
+    stream.send(volume)
+  }
 
-
-function connectAudio (stream, play, view) {
-  let element = view(stream.publicKey)
-  let volume = waudio.gain()
   let analyser = context.createAnalyser()
-  stream = waudio(stream)
 
   let volumeSelector = 'input[type=range]'
   let muteSelector = 'input[type=checkbox]'
-  let muteElement = selector(muteSelector)
+  let muteElement = element.querySelector(muteSelector)
 
-  $(muteElement).checkbox('toggle').click((c) => {
+  let formerGain = 1
+
+  $(muteElement).checkbox('toggle').click(c => {
     let label = c.target.parentNode.querySelector('label')
     let state = label.textContent
     if (state === 'Mute') {
       c.target.parentNode.querySelector('label').textContent = 'Muted'
       element.querySelector(volumeSelector).disabled = true
-      stream.mute()
+      volume.set(0)
     } else {
       c.target.parentNode.querySelector('label').textContent = 'Mute'
       element.querySelector(volumeSelector).disabled = false
-      stream.unmute()
+      volume.set(formerGain)
     }
   })
 
   $(element.querySelector(volumeSelector)).change(function () {
     volume.set(this.value)
+    formerGain = this.value
   })
-  stream.send(volume).send(analyser)
+  volume.send(analyser)
 
   var canvas = element.querySelector('canvas.person')
   canvas.canvasCtx = canvas.getContext('2d')
@@ -312,7 +385,7 @@ function connectAudio (stream, play, view) {
 }
 
 function addPerson (stream, play) {
-  return connectAudio(stream, play, remoteAudio)
+  return connectAudio(stream, play, remoteAudio(stream.publicKey))
 }
 
 function ask () {
