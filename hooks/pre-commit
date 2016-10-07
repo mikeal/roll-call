@@ -1,0 +1,3 @@
+#!/bin/sh
+browserify index.js > bundle.js
+git add bundle.js
