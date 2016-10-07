@@ -8,15 +8,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mikeal/peer-call.git"
+    "url": "git+https://github.com/mikeal/roll-call.git"
   },
   "keywords": [],
   "author": "Mikeal Rogers <mikeal.rogers@gmail.com> (http://www.mikealrogers.com)",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/mikeal/peer-call/issues"
+    "url": "https://github.com/mikeal/roll-call/issues"
   },
-  "homepage": "https://github.com/mikeal/peer-call#readme",
+  "homepage": "https://github.com/mikeal/roll-call#readme",
   "dependencies": {
     "bel": "^4.4.3",
     "funky": "^1.4.0",
