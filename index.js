@@ -1,4 +1,4 @@
-/* global $, requestAnimationFrame, AudioContext, URL */
+/* global $, requestAnimationFrame, Audio, AudioContext, URL */
 const createSwarm = require('killa-beez')
 const funky = require('funky')
 const getUserMedia = require('getusermedia')
@@ -6,6 +6,8 @@ const qs = require('querystring')
 const mediaRecorder = require('../media-recorder-stream')
 const bel = require('bel')
 const FileWriteStream = require('filestream/write')
+const context = new AudioContext()
+const waudio = require('../waudio')(context)
 
 // Convenience functions
 const byId = id => document.getElementById(id)
@@ -24,6 +26,8 @@ const recordButton = bel`
     Record
 </button>
 `
+
+const callOutput = new Audio()
 
 function connectRecording (pubkey, stream) {
   let classes = 'spinner loading icon'
@@ -133,6 +137,12 @@ function recording (swarm, microphone) {
   return startRecording
 }
 
+function addTracks (mediastream, audioelem) {
+  let s = context.createMediaStreamDestination(audioelem).stream
+  console.log('tracks', s.getAudioTracks().length)
+  s.getAudioTracks().forEach(track => mediastream.addTrack(track))
+}
+
 function joinRoom (room) {
   room = `peer-call:${room}`
   let audioopts = { echoCancellation: true, volume: 0.9 }
@@ -141,7 +151,9 @@ function joinRoom (room) {
     if (err) return console.error(err)
     if (!audioStream) return console.error('no audio')
     let p = addPerson(audioStream)
-    let swarm = createSwarm(signalHost, {stream: audioStream})
+    let callOutputStream = audioStream.clone()
+    addTracks(callOutputStream, callOutput)
+    let swarm = createSwarm(signalHost, {stream: callOutputStream})
     swarm.joinRoom(roomHost, room)
     swarm.on('stream', stream => {
       stream.peer.audioStream = stream
@@ -250,8 +262,7 @@ function startLoop () {
   looping = true
 }
 
-let context = new AudioContext()
-const waudio = require('waudio')(context)
+
 
 function connectAudio (stream, play, view) {
   let element = view(stream.publicKey)

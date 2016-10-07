@@ -2500,7 +2500,7 @@ function config (name) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],16:[function(require,module,exports){
-/* global $, requestAnimationFrame, AudioContext, URL */
+/* global $, requestAnimationFrame, Audio, AudioContext, URL */
 const createSwarm = require('killa-beez')
 const funky = require('funky')
 const getUserMedia = require('getusermedia')
@@ -2508,6 +2508,8 @@ const qs = require('querystring')
 const mediaRecorder = require('../media-recorder-stream')
 const bel = require('bel')
 const FileWriteStream = require('filestream/write')
+const context = new AudioContext()
+const waudio = require('../waudio')(context)
 
 // Convenience functions
 const byId = id => document.getElementById(id)
@@ -2526,6 +2528,8 @@ const recordButton = bel`
     Record
 </button>
 `
+
+const callOutput = new Audio()
 
 function connectRecording (pubkey, stream) {
   let classes = 'spinner loading icon'
@@ -2635,6 +2639,12 @@ function recording (swarm, microphone) {
   return startRecording
 }
 
+function addTracks (mediastream, audioelem) {
+  let s = context.createMediaStreamDestination(audioelem).stream
+  console.log('tracks', s.getAudioTracks().length)
+  s.getAudioTracks().forEach(track => mediastream.addTrack(track))
+}
+
 function joinRoom (room) {
   room = `peer-call:${room}`
   let audioopts = { echoCancellation: true, volume: 0.9 }
@@ -2643,7 +2653,9 @@ function joinRoom (room) {
     if (err) return console.error(err)
     if (!audioStream) return console.error('no audio')
     let p = addPerson(audioStream)
-    let swarm = createSwarm(signalHost, {stream: audioStream})
+    let callOutputStream = audioStream.clone()
+    addTracks(callOutputStream, callOutput)
+    let swarm = createSwarm(signalHost, {stream: callOutputStream})
     swarm.joinRoom(roomHost, room)
     swarm.on('stream', stream => {
       stream.peer.audioStream = stream
@@ -2752,8 +2764,7 @@ function startLoop () {
   looping = true
 }
 
-let context = new AudioContext()
-const waudio = require('waudio')(context)
+
 
 function connectAudio (stream, play, view) {
   let element = view(stream.publicKey)
@@ -2825,7 +2836,7 @@ if (!window.location.search) {
   else joinRoom(opts.room)
 }
 
-},{"../media-recorder-stream":1,"bel":48,"filestream/write":184,"funky":187,"getusermedia":191,"killa-beez":256,"querystring":319,"waudio":441}],17:[function(require,module,exports){
+},{"../media-recorder-stream":1,"../waudio":455,"bel":48,"filestream/write":184,"funky":187,"getusermedia":191,"killa-beez":256,"querystring":319}],17:[function(require,module,exports){
 module.exports = after
 
 function after(count, callback, err_cb) {
@@ -27561,7 +27572,7 @@ Polling.prototype.uri = function () {
   return schema + '://' + (ipv6 ? '[' + this.hostname + ']' : this.hostname) + port + this.path + query;
 };
 
-},{"../transport":161,"component-inherit":101,"debug":109,"engine.io-parser":168,"parseqs":299,"xmlhttprequest-ssl":167,"yeast":453}],166:[function(require,module,exports){
+},{"../transport":161,"component-inherit":101,"debug":109,"engine.io-parser":168,"parseqs":299,"xmlhttprequest-ssl":167,"yeast":452}],166:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -27856,7 +27867,7 @@ WS.prototype.check = function () {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../transport":161,"component-inherit":101,"debug":109,"engine.io-parser":168,"parseqs":299,"ws":57,"yeast":453}],167:[function(require,module,exports){
+},{"../transport":161,"component-inherit":101,"debug":109,"engine.io-parser":168,"parseqs":299,"ws":57,"yeast":452}],167:[function(require,module,exports){
 // browser shim for xmlhttprequest module
 
 // Indicate to eslint that ActiveXObject is global
@@ -28508,7 +28519,7 @@ exports.decodePayloadAsBinary = function (data, binaryType, callback) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./keys":169,"after":17,"arraybuffer.slice":18,"base64-arraybuffer":45,"blob":54,"has-binary":170,"wtf-8":452}],169:[function(require,module,exports){
+},{"./keys":169,"after":17,"arraybuffer.slice":18,"base64-arraybuffer":45,"blob":54,"has-binary":170,"wtf-8":451}],169:[function(require,module,exports){
 
 /**
  * Gets the keys for an object.
@@ -29544,7 +29555,7 @@ module.exports = view
 module.exports.attr = (key) => (doc) => doc[key]
 module.exports.list = list
 
-},{"yo-yo":454}],188:[function(require,module,exports){
+},{"yo-yo":453}],188:[function(require,module,exports){
 var util = require('util')
 
 var INDENT_START = /[\{\[]/
@@ -29715,7 +29726,7 @@ module.exports = function (constraints, cb) {
     });
 };
 
-},{"webrtc-adapter":442}],192:[function(require,module,exports){
+},{"webrtc-adapter":441}],192:[function(require,module,exports){
 (function (global){
 var topLevel = typeof global !== 'undefined' ? global :
     typeof window !== 'undefined' ? window : {}
@@ -51117,7 +51128,7 @@ function once (fn) {
   return f
 }
 
-},{"wrappy":451}],283:[function(require,module,exports){
+},{"wrappy":450}],283:[function(require,module,exports){
 'use strict';
 
 
@@ -80302,95 +80313,6 @@ exports.createContext = Script.createContext = function (context) {
 };
 
 },{"indexof":232}],441:[function(require,module,exports){
-
-module.exports = function (context) {
-  class Waudio {
-    constructor (inst) {
-      this.inst = inst
-      if (inst instanceof MediaStream) {
-        // Hack to get certain MediaStreams to work with contexts
-        this.node = new Audio()
-        this.node.src = URL.createObjectURL(inst)
-      }
-      if (!inst) {
-        this.inst = new Audio()
-      }
-    }
-    send (dest) {
-      if (!(dest instanceof Waudio)) {
-        dest = new Waudio(dest)
-      }
-      let source
-      if (this.inst instanceof MediaStream) {
-        source = context.createMediaStreamSource(this.inst)
-      }
-      if (this.inst instanceof Audio) {
-        source = context.createMediaElementSource(this.inst)
-      }
-      if (this.inst instanceof AudioNode) {
-        source = this.inst
-      }
-      if (!source) throw new Error('Not Implemented send for this type.')
-      source.connect(dest.getDest())
-      return dest
-    }
-    getDest () {
-      let dest
-      if (this.inst instanceof MediaStream) {
-        dest = context.createMediaStreamDestination(this.inst)
-      }
-      if (this.inst instanceof Audio) {
-        dest = context.createMediaElementDestination(this.inst)
-      }
-      if (this.inst instanceof AudioNode) {
-        dest = this.inst
-      }
-      if (!dest) throw new Error('Not Implemented dest for this type.')
-
-      return dest
-    }
-    mute () {
-      if (this.inst instanceof MediaStream) {
-        this.inst.getAudioTracks().forEach(t => t.enabled = false)
-      }
-      this.muted = true
-    }
-    unmute () {
-      if (this.inst instanceof MediaStream) {
-        this.inst.getAudioTracks().forEach(t => t.enabled = true)
-      }
-      this.muted = false
-    }
-    set (key, value) {
-      if (!value && typeof key === 'object') {
-        for (var k in key) {
-          this.set(k, key[k])
-        }
-        return
-      }
-      if (this.inst instanceof GainNode) {
-        this.inst.gain.value = key
-        return
-      }
-      this.inst[key] = value
-    }
-    output () {
-      if (this.inst instanceof AudioNode) {
-        this.inst.connect(context.destination)
-      }
-    }
-  }
-
-  let exports = inst => new Waudio(inst)
-  exports.context = context
-  exports.Waudio = Waudio
-  exports.gain = inst => new Waudio(inst || context.createGain())
-
-  return exports
-}
-
-
-},{}],442:[function(require,module,exports){
 /*
  *  Copyright (c) 2016 The WebRTC project authors. All Rights Reserved.
  *
@@ -80484,7 +80406,7 @@ module.exports = function (context) {
   }
 })();
 
-},{"./chrome/chrome_shim":443,"./edge/edge_shim":445,"./firefox/firefox_shim":447,"./safari/safari_shim":449,"./utils":450}],443:[function(require,module,exports){
+},{"./chrome/chrome_shim":442,"./edge/edge_shim":444,"./firefox/firefox_shim":446,"./safari/safari_shim":448,"./utils":449}],442:[function(require,module,exports){
 
 /*
  *  Copyright (c) 2016 The WebRTC project authors. All Rights Reserved.
@@ -80769,7 +80691,7 @@ module.exports = {
   reattachMediaStream: chromeShim.reattachMediaStream
 };
 
-},{"../utils.js":450,"./getusermedia":444}],444:[function(require,module,exports){
+},{"../utils.js":449,"./getusermedia":443}],443:[function(require,module,exports){
 /*
  *  Copyright (c) 2016 The WebRTC project authors. All Rights Reserved.
  *
@@ -80960,7 +80882,7 @@ module.exports = function() {
   }
 };
 
-},{"../utils.js":450}],445:[function(require,module,exports){
+},{"../utils.js":449}],444:[function(require,module,exports){
 /*
  *  Copyright (c) 2016 The WebRTC project authors. All Rights Reserved.
  *
@@ -82011,7 +81933,7 @@ module.exports = {
   reattachMediaStream: edgeShim.reattachMediaStream
 };
 
-},{"../utils":450,"./getusermedia":446,"sdp":336}],446:[function(require,module,exports){
+},{"../utils":449,"./getusermedia":445,"sdp":336}],445:[function(require,module,exports){
 /*
  *  Copyright (c) 2016 The WebRTC project authors. All Rights Reserved.
  *
@@ -82045,7 +81967,7 @@ module.exports = function() {
   };
 };
 
-},{}],447:[function(require,module,exports){
+},{}],446:[function(require,module,exports){
 /*
  *  Copyright (c) 2016 The WebRTC project authors. All Rights Reserved.
  *
@@ -82216,7 +82138,7 @@ module.exports = {
   reattachMediaStream: firefoxShim.reattachMediaStream
 };
 
-},{"../utils":450,"./getusermedia":448}],448:[function(require,module,exports){
+},{"../utils":449,"./getusermedia":447}],447:[function(require,module,exports){
 /*
  *  Copyright (c) 2016 The WebRTC project authors. All Rights Reserved.
  *
@@ -82368,7 +82290,7 @@ module.exports = function() {
   };
 };
 
-},{"../utils":450}],449:[function(require,module,exports){
+},{"../utils":449}],448:[function(require,module,exports){
 /*
  *  Copyright (c) 2016 The WebRTC project authors. All Rights Reserved.
  *
@@ -82404,7 +82326,7 @@ module.exports = {
   // reattachMediaStream: safariShim.reattachMediaStream
 };
 
-},{}],450:[function(require,module,exports){
+},{}],449:[function(require,module,exports){
 /*
  *  Copyright (c) 2016 The WebRTC project authors. All Rights Reserved.
  *
@@ -82549,7 +82471,7 @@ module.exports = {
   extractVersion: utils.extractVersion
 };
 
-},{}],451:[function(require,module,exports){
+},{}],450:[function(require,module,exports){
 // Returns a wrapper function that returns a wrapped callback
 // The wrapper function should do some stuff, and return a
 // presumably different callback function.
@@ -82584,7 +82506,7 @@ function wrappy (fn, cb) {
   }
 }
 
-},{}],452:[function(require,module,exports){
+},{}],451:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/wtf8 v1.0.0 by @mathias */
 ;(function(root) {
@@ -82822,7 +82744,7 @@ function wrappy (fn, cb) {
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],453:[function(require,module,exports){
+},{}],452:[function(require,module,exports){
 'use strict';
 
 var alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'.split('')
@@ -82892,7 +82814,7 @@ yeast.encode = encode;
 yeast.decode = decode;
 module.exports = yeast;
 
-},{}],454:[function(require,module,exports){
+},{}],453:[function(require,module,exports){
 var bel = require('bel') // turns template tag into DOM elements
 var morphdom = require('morphdom') // efficiently diffs + morphs two DOM elements
 var defaultEvents = require('./update-events.js') // default events to be copied when dom elements update
@@ -82928,7 +82850,7 @@ module.exports.update = function (fromNode, toNode, opts) {
   }
 }
 
-},{"./update-events.js":455,"bel":48,"morphdom":268}],455:[function(require,module,exports){
+},{"./update-events.js":454,"bel":48,"morphdom":268}],454:[function(require,module,exports){
 module.exports = [
   // attribute events (can be set with attributes)
   'onclick',
@@ -82965,5 +82887,99 @@ module.exports = [
   'onfocusin',
   'onfocusout'
 ]
+
+},{}],455:[function(require,module,exports){
+const MediaStream = window.MediaStream || window.webkitMediaStream
+
+module.exports = function (context) {
+  class Waudio {
+    constructor (inst) {
+      this.inst = inst
+      if (inst instanceof MediaStream) {
+        // Hack to get certain MediaStreams to work with contexts
+        this.node = new Audio()
+        this.node.src = URL.createObjectURL(inst)
+      }
+      if (!inst) {
+        this.inst = new MediaStream()
+      }
+    }
+    send (dest) {
+      if (!(dest instanceof Waudio)) {
+        dest = new Waudio(dest)
+      }
+      console.log(this.inst)
+      let source
+      if (this.inst instanceof MediaStream) {
+        source = context.createMediaStreamSource(this.inst)
+      }
+      if (this.inst instanceof Audio) {
+        source = context.createMediaElementSource(this.inst)
+      }
+      if (this.inst instanceof AudioNode) {
+        source = this.inst
+      }
+      if (!source) throw new Error('Not Implemented send for this type.')
+      source.connect(dest.getDest())
+      return dest
+    }
+    getDest () {
+      let dest
+      if (this.inst instanceof MediaStream) {
+        dest = context.createMediaStreamDestination(this.inst)
+      }
+      if (this.inst instanceof Audio) {
+        dest = context.createMediaStreamDestination(this.inst)
+      }
+      if (this.inst instanceof AudioNode) {
+        dest = this.inst
+      }
+      if (!dest) throw new Error('Not Implemented dest for this type.')
+
+      return dest
+    }
+    mute () {
+      if (this.inst instanceof MediaStream) {
+        this.inst.getAudioTracks().forEach(t => t.enabled = false)
+      }
+      this.muted = true
+    }
+    unmute () {
+      if (this.inst instanceof MediaStream) {
+        this.inst.getAudioTracks().forEach(t => t.enabled = true)
+      }
+      this.muted = false
+    }
+    set (key, value) {
+      if (!value && typeof key === 'object') {
+        for (var k in key) {
+          this.set(k, key[k])
+        }
+        return
+      }
+      if (this.inst instanceof GainNode) {
+        this.inst.gain.value = key
+        return
+      }
+      this.inst[key] = value
+    }
+    output () {
+      if (this.inst instanceof AudioNode) {
+        this.inst.connect(context.destination)
+      }
+    }
+    toMediaStream () {
+      return context.createMediaStreamDestination(this.inst).stream
+    }
+  }
+
+  let exports = inst => new Waudio(inst)
+  exports.context = context
+  exports.Waudio = Waudio
+  exports.gain = inst => new Waudio(inst || context.createGain())
+
+  return exports
+}
+
 
 },{}]},{},[16]);
