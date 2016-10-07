@@ -29,7 +29,7 @@ function connectRecording (pubkey, stream) {
   let elem = bel`
   <div class="downloads">
     <div class="ui inverted divider"></div>
-    <div class="ui basic button" disabled>
+    <div class="ui basic button record-download">
       <i class="${classes}"></i><span class="bits"></span>
     </div>
   </div>`
@@ -42,14 +42,17 @@ function connectRecording (pubkey, stream) {
     span.textContent = Math.floor(bits / 1000) + 'k'
   })
 
+  let button = selector(`#a${pubkey} div.downloads div.button`)
+  $(button).addClass('disabled')
+
   let ret = file => {
     $(`#a${pubkey} div.downloads i`)
     .removeClass('spinner')
     .removeClass('loading')
     .addClass('download')
 
-    let button = selector(`#a${pubkey} div.downloads div.button`)
-    button.disabled = false
+    $(button).removeClass('disabled').addClass('enabled')
+
     button.onclick = () => {
       let n = $(`#a${pubkey} div.person-name`).text() + '.webm'
       bel`<a href="${URL.createObjectURL(file)}" download="${n}"></a>`.click()
@@ -57,6 +60,8 @@ function connectRecording (pubkey, stream) {
   }
   return ret
 }
+
+const recordingStreams = {}
 
 function recording (swarm, microphone) {
   let remotes = []
@@ -83,6 +88,8 @@ function recording (swarm, microphone) {
       writer.publicKey = swarm.publicKey
       stream.pipe(writer)
       files[pubkey] = writer
+
+      recordingStreams[pubkey] = stream
 
       let onFile = connectRecording(pubkey, stream)
       writer.on('file', onFile)
@@ -145,7 +152,11 @@ function joinRoom (room) {
       document.getElementById('audio-container').appendChild(elem)
     })
     swarm.on('disconnect', pubKey => {
-      $(document.getElementById(`a${pubKey}`)).remove()
+      if (recordingStreams[pubKey]) {
+        recordingStreams[pubKey].emit('end')
+      } else {
+        $(`#a${pubKey}`).remove()
+      }
     })
     document.getElementById('audio-container').appendChild(p)
     document.body.appendChild(recordButton)
