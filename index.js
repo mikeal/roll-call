@@ -1,4 +1,4 @@
-const createSwarm = require('../killa-beez')
+const createSwarm = require('killa-beez')
 const funky = require('funky')
 const getUserMedia = require('getusermedia')
 const qs = require('querystring')
