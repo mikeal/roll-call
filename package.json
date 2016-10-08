@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/mikeal/roll-call#readme",
   "dependencies": {
+    "async-load": "^1.0.7",
     "bel": "^4.4.3",
     "drag-drop": "^2.12.1",
     "funky": "^1.4.0",

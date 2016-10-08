@@ -9,6 +9,7 @@ const dragDrop = require('drag-drop')
 const FileWriteStream = require('filestream/write')
 const context = new AudioContext()
 const waudio = require('waudio')(context)
+const asyncLoad = require('async-load')
 
 // Convenience functions
 const byId = id => document.getElementById(id)
@@ -18,13 +19,14 @@ const values = obj => Object.keys(obj).map(k => obj[k])
 const getRandom = () => Math.random().toString(36).substring(7)
 
 // Services for exchanges.
-let signalHost = 'https://signalexchange.now.sh'
-let roomHost = 'https://roomexchange.now.sh'
+const signalHost = 'https://signalexchange.now.sh'
+const roomHost = 'https://roomexchange.now.sh'
+const zipurl = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js'
 
 const recordButton = bel`
 <button id="record" class="ui compact labeled icon button">
   <i class="unmute icon"></i>
-    Record
+  <span>Record</span>
 </button>
 `
 
@@ -66,7 +68,6 @@ class Output {
   }
 }
 
-
 function addAudioFile (file) {
   let elem = audioFileView(file.name)
   let audio = new Audio()
@@ -90,8 +91,12 @@ function addAudioFile (file) {
   return elem.volume
 }
 
+function recordingName (pubkey) {
+  return $(`#a${pubkey} div.person-name`).text() + '.webm'
+}
+
 function connectRecording (pubkey, stream) {
-  let classes = 'spinner loading icon'
+  let classes = 'spinner loading icon download-icon'
   let elem = bel`
   <div class="downloads">
     <div class="ui inverted divider"></div>
@@ -119,12 +124,62 @@ function connectRecording (pubkey, stream) {
 
     $(button).removeClass('disabled').addClass('enabled')
 
+    button.publicKey = pubkey
+    button.recordingFile = file
     button.onclick = () => {
-      let n = $(`#a${pubkey} div.person-name`).text() + '.webm'
+      let n = recordingName(pubkey)
       bel`<a href="${URL.createObjectURL(file)}" download="${n}"></a>`.click()
     }
+
+    enableZipDownload()
   }
   return ret
+}
+
+function enableZipDownload () {
+  if (!window.JSZip) return
+  let elements = selectall('i.download-icon')
+  for (let i = 0; i < elements.length; i++) {
+    let el = elements[i]
+    if ($(el).hasClass('spinner')) return
+  }
+
+  $('#record i')
+  .removeClass('notched circle loading')
+  .addClass('download')
+  $('#record span')
+  .text('Download Zip')
+
+  let downloadZip = () => {
+    recordButton.onclick = () => {}
+
+    $('#record i')
+    .removeClass('download')
+    .addClass('notched circle loading')
+    $('#record span')
+    .text('Loading...')
+
+    let zip = new window.JSZip()
+    let folder = zip.folder(`${window.RollCallRoom}-tracks`)
+    Array(...selectall('div.record-download')).forEach(button => {
+      let name = recordingName(button.publicKey)
+      let file = button.recordingFile
+      folder.file(name, file)
+    })
+    zip.generateAsync({type: 'blob'}).then(blob => {
+      let n = `${window.RollCallRoom}.zip`
+      bel`<a href="${URL.createObjectURL(blob)}" download="${n}"></a>`.click()
+
+      $('#record i')
+      .removeClass('notched circle loading')
+      .addClass('download')
+      $('#record span')
+      .text('Download Zip')
+
+      recordButton.onclick = downloadZip
+    })
+  }
+  recordButton.onclick = downloadZip
 }
 
 const recordingStreams = {}
@@ -133,27 +188,21 @@ function recording (swarm, microphone) {
   let remotes = []
 
   function startRecording () {
-    let streams = []
-    let files = {}
     let me = mediaRecorder(microphone, {mimeType: 'audio/webm;codecs=opus'})
     let writer = FileWriteStream()
     me.pipe(writer)
-    files[swarm.publicKey] = writer
     writer.publicKey = swarm.publicKey
     me.publicKey = swarm.publicKey
-    streams.push(me)
 
     let onFile = connectRecording('undefined', me)
     writer.on('file', onFile)
 
     swarm.on('substream', (stream, id) => {
       if (id.slice(0, 'recording:'.length) !== 'recording:') return
-      streams.push(stream)
       let pubkey = id.slice('recording:'.length)
       let writer = FileWriteStream()
       writer.publicKey = swarm.publicKey
       stream.pipe(writer)
-      files[pubkey] = writer
 
       recordingStreams[pubkey] = stream
 
@@ -166,11 +215,22 @@ function recording (swarm, microphone) {
     recordButton.onclick = () => {
       me.stop()
       remotes.forEach(commands => commands.stopRecording())
-      $(recordButton).remove()
+      // $(recordButton).remove()
+      // TODO: change into a loading icon.
+
+      $('#record i')
+      .removeClass('stop')
+      .addClass('notched circle loading')
+      $('#record span')
+      .text('Loading...')
+
+      asyncLoad(zipurl).then(enableZipDownload)
     }
     $('button#record i')
     .removeClass('unmute')
     .addClass('stop')
+    $('#record span')
+    .text('Stop')
   }
 
   function mkrpc (peer) {
@@ -405,4 +465,5 @@ if (!window.location.search) {
   let opts = qs.parse(window.location.search.slice(1))
   if (!opts.room) ask()
   else joinRoom(opts.room)
+  window.RollCallRoom = opts.room
 }
