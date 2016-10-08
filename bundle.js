@@ -218,12 +218,15 @@ function recording (swarm, microphone) {
     })
 
     remotes.forEach(commands => commands.record())
+    let onRecording = commands => {
+      commands.record()
+    }
+    swarm.on('commands:recording', onRecording)
 
     recordButton.onclick = () => {
       me.stop()
       remotes.forEach(commands => commands.stopRecording())
-      // $(recordButton).remove()
-      // TODO: change into a loading icon.
+      swarm.removeListener('commands:recording', onRecording)
 
       $('#record i')
       .removeClass('stop')
