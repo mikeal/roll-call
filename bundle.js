@@ -2635,27 +2635,21 @@ function recording (swarm, microphone) {
   let remotes = []
 
   function startRecording () {
-    let streams = []
-    let files = {}
     let me = mediaRecorder(microphone, {mimeType: 'audio/webm;codecs=opus'})
     let writer = FileWriteStream()
     me.pipe(writer)
-    files[swarm.publicKey] = writer
     writer.publicKey = swarm.publicKey
     me.publicKey = swarm.publicKey
-    streams.push(me)
 
     let onFile = connectRecording('undefined', me)
     writer.on('file', onFile)
 
     swarm.on('substream', (stream, id) => {
       if (id.slice(0, 'recording:'.length) !== 'recording:') return
-      streams.push(stream)
       let pubkey = id.slice('recording:'.length)
       let writer = FileWriteStream()
       writer.publicKey = swarm.publicKey
       stream.pipe(writer)
-      files[pubkey] = writer
 
       recordingStreams[pubkey] = stream
 
