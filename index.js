@@ -91,8 +91,10 @@ function addAudioFile (file) {
   return elem.volume
 }
 
-function recordingName (pubkey) {
-  return $(`#a${pubkey} div.person-name`).text() + '.webm'
+function recordingName (pubkey, delay) {
+  let text = $(`#a${pubkey} div.person-name`).text()
+  if (delay) text += '-' + delay
+  return text + '.webm'
 }
 
 function connectRecording (pubkey, stream) {
@@ -126,8 +128,9 @@ function connectRecording (pubkey, stream) {
 
     button.publicKey = pubkey
     button.recordingFile = file
+    button.recordingDelay = ret.recordingDelay
     button.onclick = () => {
-      let n = recordingName(pubkey)
+      let n = recordingName(pubkey, button.recordingDelay)
       bel`<a href="${URL.createObjectURL(file)}" download="${n}"></a>`.click()
     }
 
@@ -162,7 +165,7 @@ function enableZipDownload () {
     let zip = new window.JSZip()
     let folder = zip.folder(`${window.RollCallRoom}-tracks`)
     Array(...selectall('div.record-download')).forEach(button => {
-      let name = recordingName(button.publicKey)
+      let name = recordingName(button.publicKey, button.recordingDelay)
       let file = button.recordingFile
       folder.file(name, file)
     })
@@ -197,6 +200,8 @@ function recording (swarm, microphone) {
     let onFile = connectRecording('undefined', me)
     writer.on('file', onFile)
 
+    let starttime = Date.now()
+
     swarm.on('substream', (stream, id) => {
       if (id.slice(0, 'recording:'.length) !== 'recording:') return
       let pubkey = id.slice('recording:'.length)
@@ -207,16 +212,20 @@ function recording (swarm, microphone) {
       recordingStreams[pubkey] = stream
 
       let onFile = connectRecording(pubkey, stream)
+      onFile.recordingDelay = Date.now() - starttime
       writer.on('file', onFile)
     })
 
     remotes.forEach(commands => commands.record())
+    let onRecording = commands => {
+      commands.record()
+    }
+    swarm.on('commands:recording', onRecording)
 
     recordButton.onclick = () => {
       me.stop()
       remotes.forEach(commands => commands.stopRecording())
-      // $(recordButton).remove()
-      // TODO: change into a loading icon.
+      swarm.removeListener('commands:recording', onRecording)
 
       $('#record i')
       .removeClass('stop')
