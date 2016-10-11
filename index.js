@@ -10,6 +10,7 @@ const FileWriteStream = require('filestream/write')
 const context = new AudioContext()
 const waudio = require('waudio')(context)
 const asyncLoad = require('async-load')
+const xhr = require('xhr')
 
 // Convenience functions
 const byId = id => document.getElementById(id)
@@ -267,6 +268,22 @@ function recording (swarm, microphone) {
   return startRecording
 }
 
+function getRtcConfig (cb) {
+  xhr('https://instant.io/rtcConfig', function (err, res) {
+    if (err || res.statusCode !== 200) {
+      cb(new Error('Could not get WebRTC config from server. Using default (without TURN).'))
+    } else {
+      var rtcConfig
+      try {
+        rtcConfig = JSON.parse(res.body)
+      } catch (err) {
+        return cb(new Error('Got invalid WebRTC config from server: ' + res.body))
+      }
+      cb(null, rtcConfig)
+    }
+  })
+}
+
 function joinRoom (room) {
   room = `peer-call:${room}`
   let audioopts = { echoCancellation: true, volume: 0.9 }
@@ -276,38 +293,45 @@ function joinRoom (room) {
     if (!audioStream) return console.error('no audio')
     let output = new Output(audioStream.clone())
     let p = addPerson(output)
-    let swarm = createSwarm(signalHost, {stream: output.stream})
-    swarm.joinRoom(roomHost, room)
-    swarm.on('stream', stream => {
-      stream.peer.audioStream = stream
-      stream.publicKey = stream.peer.publicKey
-      let elem = addPerson(stream, true)
-      elem.audioStream = stream
-      let remotes = values(swarm.peers).length
-      elem.querySelector('div.person-name').textContent = `Caller (${remotes})`
-      byId('audio-container').appendChild(elem)
-    })
-    swarm.on('disconnect', pubKey => {
-      if (recordingStreams[pubKey]) {
-        recordingStreams[pubKey].emit('end')
-      } else {
-        $(`#a${pubKey}`).remove()
-      }
-    })
-    document.getElementById('audio-container').appendChild(p)
-    document.body.appendChild(recordButton)
+    getRtcConfig((err, rtcConfig) => {
+      if (err) console.error(err) // non-fatal error
 
-    recordButton.onclick = recording(swarm, output.stream)
+      let swarm = createSwarm(signalHost, {
+        stream: output.stream,
+        rtcConfig: rtcConfig
+      })
+      swarm.joinRoom(roomHost, room)
+      swarm.on('stream', stream => {
+        stream.peer.audioStream = stream
+        stream.publicKey = stream.peer.publicKey
+        let elem = addPerson(stream, true)
+        elem.audioStream = stream
+        let remotes = values(swarm.peers).length
+        elem.querySelector('div.person-name').textContent = `Caller (${remotes})`
+        byId('audio-container').appendChild(elem)
+      })
+      swarm.on('disconnect', pubKey => {
+        if (recordingStreams[pubKey]) {
+          recordingStreams[pubKey].emit('end')
+        } else {
+          $(`#a${pubKey}`).remove()
+        }
+      })
+      document.getElementById('audio-container').appendChild(p)
+      document.body.appendChild(recordButton)
 
-    dragDrop('body', {
-      onDrop: function (files, pos) {
-        files.forEach(file => {
-          let gain = addAudioFile(file)
-          output.add(gain.inst)
-        })
-      },
-      onDragOver: function () {},
-      onDragLeave: function () {}
+      recordButton.onclick = recording(swarm, output.stream)
+
+      dragDrop('body', {
+        onDrop: function (files, pos) {
+          files.forEach(file => {
+            let gain = addAudioFile(file)
+            output.add(gain.inst)
+          })
+        },
+        onDragOver: function () {},
+        onDragLeave: function () {}
+      })
     })
   })
 }
