@@ -270,7 +270,10 @@ function recording (swarm, microphone) {
 }
 
 function getRtcConfig (cb) {
-  xhr('https://instant.io/rtcConfig', function (err, res) {
+  xhr({
+    url: 'https://instant.io/rtcConfig',
+    timeout: 10000
+  }, function (err, res) {
     if (err || res.statusCode !== 200) {
       cb(new Error('Could not get WebRTC config from server. Using default (without TURN).'))
     } else {
@@ -299,7 +302,7 @@ function joinRoom (room) {
 
       let swarm = createSwarm(signalHost, {
         stream: output.stream,
-        rtcConfig: rtcConfig
+        config: rtcConfig
       })
       swarm.joinRoom(roomHost, room)
       swarm.on('stream', stream => {
