@@ -280,14 +280,19 @@ function getRtcConfig(cb) {
 
 function joinRoom(room) {
   room = `peer-call:${room}`
+
+  const deviceId = storage.get('input');
+
   let audioopts = {
     echoCancellation: true,
-    volume: 0.9
+    volume: 0.9,
+    deviceId: deviceId ? {exact: deviceId} : undefined
   }
   let mediaopts = {
     audio: audioopts,
     video: false
   }
+
   getUserMedia(mediaopts, (err, audioStream) => {
     if (err) return console.error(err)
     if (!audioStream) return console.error('no audio')
@@ -399,16 +404,6 @@ function connectAudio(stream, play, element) {
   if (stream instanceof Output) {
     volume = waudio(stream.gainFilter);
     stream = waudio(stream.stream);
-
-    storage.on('change:device', (id) => {
-      if (typeof stream.node.setSinkId !== 'function') {
-        return console.warn(`setSinkId mehtod is not supported.`);
-      }
-
-      stream.node.setSinkId(id).catch((e) => {
-        console.warn(`Could not set Audio device: ${e}`);
-      });
-    });
   } else {
     stream = waudio(stream)
     volume = waudio.gain()
