@@ -397,19 +397,23 @@ function startLoop() {
 function connectAudio(stream, play, element) {
   let volume
   if (stream instanceof Output) {
-    volume = waudio(stream.gainFilter)
-    stream = waudio(stream.stream)
+    volume = waudio(stream.gainFilter);
+    stream = waudio(stream.stream);
+
+    storage.on('change:device', (id) => {
+      if (typeof stream.node.setSinkId !== 'function') {
+        return console.warn(`setSinkId mehtod is not supported.`);
+      }
+
+      stream.node.setSinkId(id).catch((e) => {
+        console.warn(`Could not set Audio device: ${e}`);
+      });
+    });
   } else {
     stream = waudio(stream)
     volume = waudio.gain()
     stream.send(volume)
   }
-
-  storage.on('change:device', (id) => {
-    stream.node.setSinkId(id).catch((e) => {
-      console.warn(`Could not set Audio device: ${e}`);
-    });
-  });
 
   let analyser = context.createAnalyser();
   let volumeSelector = 'input[type=range]';
