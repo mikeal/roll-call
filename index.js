@@ -1,37 +1,63 @@
 /* global $, requestAnimationFrame, Audio, AudioContext, URL */
-const createSwarm = require('killa-beez')
-const funky = require('funky')
-const getUserMedia = require('getusermedia')
-const qs = require('querystring')
-const mediaRecorder = require('media-recorder-stream')
-const bel = require('bel')
-const dragDrop = require('drag-drop')
-const FileWriteStream = require('filestream/write')
-const context = new AudioContext()
-const waudio = require('waudio')(context)
-const asyncLoad = require('async-load')
-const xhr = require('xhr')
+const createSwarm = require('killa-beez');
+const funky = require('funky');
+const getUserMedia = require('getusermedia');
+const qs = require('querystring');
+const mediaRecorder = require('media-recorder-stream');
+const bel = require('bel');
+const dragDrop = require('drag-drop');
+const FileWriteStream = require('filestream/write');
+const context = new AudioContext();
+const waudio = require('waudio')(context);
+const asyncLoad = require('async-load');
+const xhr = require('xhr');
 
 // Convenience functions
-const byId = id => document.getElementById(id)
-const selector = exp => document.querySelector(exp)
-const selectall = exp => document.querySelectorAll(exp)
-const values = obj => Object.keys(obj).map(k => obj[k])
-const getRandom = () => Math.random().toString(36).substring(7)
+const byId = id => document.getElementById(id);
+const selector = exp => document.querySelector(exp);
+const selectall = exp => document.querySelectorAll(exp);
+const values = obj => Object.keys(obj).map(k => obj[k]);
+const getRandom = () => Math.random().toString(36).substring(7);
 
 // Services for exchanges.
-const signalHost = 'https://signalexchange.now.sh'
-const roomHost = 'https://roomexchange.now.sh'
-const zipurl = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js'
+const signalHost = 'https://signalexchange.now.sh';
+const roomHost = 'https://roomexchange.now.sh';
+const zipurl = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js';
 
-const recordButton = bel`
+const STORAGE_KEY = 'roll-call';
+const Storage = {
+  get(key) {
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+
+    if (typeof key === 'undefined') {
+      return data;
+    }
+
+    return data[key] || null;
+  },
+
+  set(key, value) {
+    const data = Storage.get();
+    data[key] = value;
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+};
+
+const recordButton = bel `
 <button id="record" class="ui compact labeled icon button">
   <i class="unmute icon"></i>
   <span>Record</span>
 </button>
-`
+`;
 
-const audioFileView = funky`
+const settingsButton = bel `
+<button id="settings" class="ui compact labeled icon button">
+  <i class="settings icon"></i><span>Settings</span>
+</button>
+`;
+
+const audioFileView = funky `
 <div class="card">
   <div style="height:49px;width:290">
     <canvas id="canvas"
@@ -49,10 +75,31 @@ const audioFileView = funky`
     </div>
   </div>
 </div>
-`
+`;
+
+const settingsModalView = funky `
+  <div id="settings" class="ui modal">
+    <i class="close icon"></i>
+    <div class="header">Settings</div>
+  <div class="image content">
+    <div class="ui two column centered grid description">
+      <div class="ui form column">
+        <div class="field">
+          <label for="username">Name</label>
+          <input type="text" name="username" placeholder="Enter your name" value="${item => item.username || ''}">
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="actions">
+    <div class="ui button cancel">Cancel</div>
+    <div class="ui button approve">Save</div>
+  </div>
+</div>
+`;
 
 class Output {
-  constructor (stream) {
+  constructor(stream) {
     this.microphone = context.createMediaStreamSource(stream)
     this.gainFilter = context.createGain()
     this.destination = context.createMediaStreamDestination()
@@ -64,12 +111,12 @@ class Output {
     oldtracks.forEach(track => stream.removeTrack(track))
     this.stream = stream
   }
-  add (audio) {
+  add(audio) {
     audio.connect(this.gainFilter)
   }
 }
 
-function addAudioFile (file) {
+function addAudioFile(file) {
   let elem = audioFileView(file.name)
   let audio = new Audio()
   let button = elem.querySelector('i.play-button')
@@ -92,15 +139,15 @@ function addAudioFile (file) {
   return elem.volume
 }
 
-function recordingName (pubkey, delay) {
+function recordingName(pubkey, delay) {
   let text = $(`#a${pubkey} div.person-name`).text()
   if (delay) text += '-' + delay
   return text + '.webm'
 }
 
-function connectRecording (pubkey, stream) {
+function connectRecording(pubkey, stream) {
   let classes = 'spinner loading icon download-icon'
-  let elem = bel`
+  let elem = bel `
   <div class="downloads">
     <div class="ui inverted divider"></div>
     <div class="ui basic button record-download">
@@ -121,9 +168,9 @@ function connectRecording (pubkey, stream) {
 
   let ret = file => {
     $(`#a${pubkey} div.downloads i`)
-    .removeClass('spinner')
-    .removeClass('loading')
-    .addClass('download')
+      .removeClass('spinner')
+      .removeClass('loading')
+      .addClass('download')
 
     $(button).removeClass('disabled').addClass('enabled')
 
@@ -132,7 +179,7 @@ function connectRecording (pubkey, stream) {
     button.recordingDelay = ret.recordingDelay
     button.onclick = () => {
       let n = recordingName(pubkey, button.recordingDelay)
-      bel`<a href="${URL.createObjectURL(file)}" download="${n}"></a>`.click()
+      bel `<a href="${URL.createObjectURL(file)}" download="${n}"></a>`.click()
     }
 
     enableZipDownload()
@@ -140,7 +187,7 @@ function connectRecording (pubkey, stream) {
   return ret
 }
 
-function enableZipDownload () {
+function enableZipDownload() {
   if (!window.JSZip) return
   let elements = selectall('i.download-icon')
   for (let i = 0; i < elements.length; i++) {
@@ -149,19 +196,19 @@ function enableZipDownload () {
   }
 
   $('#record i')
-  .removeClass('notched circle loading')
-  .addClass('download')
+    .removeClass('notched circle loading')
+    .addClass('download')
   $('#record span')
-  .text('Download Zip')
+    .text('Download Zip')
 
   let downloadZip = () => {
     recordButton.onclick = () => {}
 
     $('#record i')
-    .removeClass('download')
-    .addClass('notched circle loading')
+      .removeClass('download')
+      .addClass('notched circle loading')
     $('#record span')
-    .text('Loading...')
+      .text('Loading...')
 
     let zip = new window.JSZip()
     let folder = zip.folder(`${window.RollCallRoom}-tracks`)
@@ -170,15 +217,17 @@ function enableZipDownload () {
       let file = button.recordingFile
       folder.file(name, file)
     })
-    zip.generateAsync({type: 'blob'}).then(blob => {
+    zip.generateAsync({
+      type: 'blob'
+    }).then(blob => {
       let n = `${window.RollCallRoom}.zip`
-      bel`<a href="${URL.createObjectURL(blob)}" download="${n}"></a>`.click()
+      bel `<a href="${URL.createObjectURL(blob)}" download="${n}"></a>`.click()
 
       $('#record i')
-      .removeClass('notched circle loading')
-      .addClass('download')
+        .removeClass('notched circle loading')
+        .addClass('download')
       $('#record span')
-      .text('Download Zip')
+        .text('Download Zip')
 
       recordButton.onclick = downloadZip
     })
@@ -188,11 +237,13 @@ function enableZipDownload () {
 
 const recordingStreams = {}
 
-function recording (swarm, microphone) {
+function recording(swarm, microphone) {
   let remotes = []
 
-  function startRecording () {
-    let me = mediaRecorder(microphone, {mimeType: 'audio/webm;codecs=opus'})
+  function startRecording() {
+    let me = mediaRecorder(microphone, {
+      mimeType: 'audio/webm;codecs=opus'
+    })
     let writer = FileWriteStream()
     me.pipe(writer)
     writer.publicKey = swarm.publicKey
@@ -229,27 +280,29 @@ function recording (swarm, microphone) {
       swarm.removeListener('commands:recording', onRecording)
 
       $('#record i')
-      .removeClass('stop')
-      .addClass('notched circle loading')
+        .removeClass('stop')
+        .addClass('notched circle loading')
       $('#record span')
-      .text('Loading...')
+        .text('Loading...')
 
       asyncLoad(zipurl).then(enableZipDownload)
     }
     $('button#record i')
-    .removeClass('unmute')
-    .addClass('stop')
+      .removeClass('unmute')
+      .addClass('stop')
     $('#record span')
-    .text('Stop')
+      .text('Stop')
   }
 
-  function mkrpc (peer) {
+  function mkrpc(peer) {
     // Create RPC services scoped to this peer.
     let rpc = {}
     let stream
     rpc.record = () => {
       $(recordButton).addClass('disabled')
-      stream = mediaRecorder(microphone, {mimeType: 'audio/webm;codecs=opus'})
+      stream = mediaRecorder(microphone, {
+        mimeType: 'audio/webm;codecs=opus'
+      })
       stream.pipe(peer.meth.stream(`recording:${swarm.publicKey}`))
     }
     rpc.stopRecording = () => {
@@ -268,11 +321,11 @@ function recording (swarm, microphone) {
   return startRecording
 }
 
-function getRtcConfig (cb) {
+function getRtcConfig(cb) {
   xhr({
     url: 'https://instant.io/rtcConfig',
     timeout: 10000
-  }, function (err, res) {
+  }, function(err, res) {
     if (err || res.statusCode !== 200) {
       cb(new Error('Could not get WebRTC config from server. Using default (without TURN).'))
     } else {
@@ -287,15 +340,22 @@ function getRtcConfig (cb) {
   })
 }
 
-function joinRoom (room) {
+function joinRoom(room) {
   room = `peer-call:${room}`
-  let audioopts = { echoCancellation: true, volume: 0.9 }
-  let mediaopts = { audio: audioopts, video: false }
+  let audioopts = {
+    echoCancellation: true,
+    volume: 0.9
+  }
+  let mediaopts = {
+    audio: audioopts,
+    video: false
+  }
   getUserMedia(mediaopts, (err, audioStream) => {
     if (err) return console.error(err)
     if (!audioStream) return console.error('no audio')
     let output = new Output(audioStream.clone())
     let p = addPerson(output)
+
     getRtcConfig((err, rtcConfig) => {
       if (err) console.error(err) // non-fatal error
 
@@ -306,11 +366,12 @@ function joinRoom (room) {
       swarm.joinRoom(roomHost, room)
       swarm.on('stream', stream => {
         stream.peer.audioStream = stream
-        stream.publicKey = stream.peer.publicKey
-        let elem = addPerson(stream, true)
+        stream.publicKey = stream.peer.publicKey;
+
+        const remotes = values(swarm.peers).length
+        const elem = addPerson(stream, `Caller (${remotes})`);
+
         elem.audioStream = stream
-        let remotes = values(swarm.peers).length
-        elem.querySelector('div.person-name').textContent = `Caller (${remotes})`
         byId('audio-container').appendChild(elem)
       })
       swarm.on('disconnect', pubKey => {
@@ -320,25 +381,31 @@ function joinRoom (room) {
           $(`#a${pubKey}`).remove()
         }
       })
+
+      const modal = settingsModalView(Storage.get());
+
       document.getElementById('audio-container').appendChild(p)
       document.body.appendChild(recordButton)
+      document.body.appendChild(settingsButton)
+      document.body.appendChild(modal)
 
       recordButton.onclick = recording(swarm, output.stream)
+      settingsButton.onclick = showOptions(modal);
 
       dragDrop('body', {
-        onDrop: function (files, pos) {
+        onDrop: function(files, pos) {
           files.forEach(file => {
             let gain = addAudioFile(file)
             output.add(gain.inst)
           })
         },
-        onDragOver: function () {},
-        onDragLeave: function () {}
+        onDragOver: function() {},
+        onDragLeave: function() {}
       })
     })
   })
 }
-const mainButtons = funky`
+const mainButtons = funky `
 <div class="join-container">
   <div class="ui large buttons">
     <button id="join-party" class="ui button">Join the Party 🎉</button>
@@ -347,8 +414,8 @@ const mainButtons = funky`
   </div>
 </div>`
 
-const remoteAudio = funky`
-<div class="card" id="a${id => id}">
+const remoteAudio = funky `
+<div class="card" id="a${item => item.key}">
   <div style="height:49px;width:290">
     <canvas id="canvas"
       width="290"
@@ -358,7 +425,7 @@ const remoteAudio = funky`
     </canvas>
   </div>
   <div class="extra content">
-    <div contenteditable="true" class="header person-name">Me</div>
+    <div contenteditable="true" class="header person-name">${item => item.username}</div>
     <div class="volume">
       <div class="ui toggle checkbox">
         <input type="checkbox" name="mute">
@@ -374,12 +441,12 @@ const WIDTH = 290
 const HEIGHT = 49
 let looping
 
-function startLoop () {
+function startLoop() {
   if (looping) return
 
   let lastTime = Date.now()
 
-  function draw () {
+  function draw() {
     requestAnimationFrame(draw)
     var now = Date.now()
     if (now - lastTime < 50) return
@@ -387,7 +454,7 @@ function startLoop () {
     var elements = [...selectall('canvas.person')]
     elements.forEach(drawPerson)
 
-    function drawPerson (canvas) {
+    function drawPerson(canvas) {
       var canvasCtx = canvas.canvasCtx
       var analyser = canvas.analyser
       var bufferLength = analyser._bufferLength
@@ -423,7 +490,7 @@ function startLoop () {
   looping = true
 }
 
-function connectAudio (stream, play, element) {
+function connectAudio(stream, play, element) {
   let volume
   if (stream instanceof Output) {
     volume = waudio(stream.gainFilter)
@@ -456,7 +523,7 @@ function connectAudio (stream, play, element) {
     }
   })
 
-  $(element.querySelector(volumeSelector)).change(function () {
+  $(element.querySelector(volumeSelector)).change(function() {
     volume.set(this.value)
     formerGain = this.value
   })
@@ -480,11 +547,40 @@ function connectAudio (stream, play, element) {
   return element
 }
 
-function addPerson (stream, play) {
-  return connectAudio(stream, play, remoteAudio(stream.publicKey))
+function addPerson(stream, username) {
+  const el = remoteAudio({
+    username: username || Storage.get('username') || 'Me',
+    key: stream.publicKey || 'me'
+  });
+
+  // When undefined, use username from the Storage
+  if (typeof username === 'undefined') {
+    const name = $(el).find('.person-name');
+    name.blur(() => {
+      Storage.set('username', name.html());
+    });
+  }
+
+  return connectAudio(stream, !!username, el);
 }
 
-function ask () {
+function showOptions(modal) {
+  return () => {
+    // Update the modal with latest data
+    modal.update(Storage.get());
+
+    $(modal).modal({
+      onApprove() {
+        const name = $(modal).find('input[name="username"]').val();
+        // update the username on the audio tile
+        $('#ame .person-name').html(name);
+        Storage.set('username', name);
+      }
+    }).modal('show')
+  };
+}
+
+function ask() {
   let buttons = mainButtons()
   document.getElementById('main-container').appendChild(buttons)
   document.getElementById('join-party').onclick = () => {
