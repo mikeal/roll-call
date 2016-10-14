@@ -1,6 +1,6 @@
 /* global window, document, $, requestAnimationFrame, Audio, AudioContext, URL */
-
 const createSwarm = require('killa-beez');
+const funky = require('funky');
 const getUserMedia = require('getusermedia');
 const qs = require('querystring');
 const mediaRecorder = require('media-recorder-stream');
@@ -77,7 +77,7 @@ function addAudioFile (file) {
   return elem.volume
 }
 
-function recordingName (pubkey, delay) {
+function recordingName(pubkey, delay) {
   let text = $(`#a${pubkey} div.person-name`).text()
   if (delay) text += '-' + delay
   return text + '.webm'
@@ -290,7 +290,6 @@ function getRtcConfig(cb) {
 
 function joinRoom(room) {
   room = `peer-call:${room}`
-
   const deviceId = storage.get('input');
 
   let audioopts = {
@@ -343,8 +342,6 @@ function joinRoom(room) {
         document.body.appendChild(modal);
         settingsButton.onclick = () => $(modal).modal('show');
       });
-
-      recordButton.onclick = recording(swarm, output.stream)
 
       dragDrop((files) => {
         files.forEach(file => {
@@ -476,7 +473,4 @@ $(() => {
       window.RollCallRoom = opts.room;
       return joinRoom(opts.room);
     }
-  }
-
-  document.body.appendChild(homeButtons);
-});
+}
