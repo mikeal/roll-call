@@ -1,6 +1,5 @@
 /* global window, document, $, requestAnimationFrame, Audio, AudioContext, URL */
 const createSwarm = require('killa-beez');
-const funky = require('funky');
 const getUserMedia = require('getusermedia');
 const qs = require('querystring');
 const mediaRecorder = require('media-recorder-stream');
@@ -69,7 +68,7 @@ function addAudioFile (file) {
   const audio = new Audio()
   audio.src = URL.createObjectURL(file)
 
-  const elem = views.audioFile(file, audio, context)
+  const elem = audioFile(file, audio, context)
 
   connectAudio(audio, true, elem)
   byId('audio-container').appendChild(elem)
@@ -343,6 +342,8 @@ function joinRoom(room) {
         settingsButton.onclick = () => $(modal).modal('show');
       });
 
+      recordButton.onclick = recording(swarm, output.stream)
+
       dragDrop((files) => {
         files.forEach(file => {
           let gain = addAudioFile(file)
@@ -473,4 +474,7 @@ $(() => {
       window.RollCallRoom = opts.room;
       return joinRoom(opts.room);
     }
-}
+  }
+
+  document.body.appendChild(homeButtons);
+});
