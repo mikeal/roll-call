@@ -1,16 +1,23 @@
-/* global $, requestAnimationFrame, Audio, AudioContext, URL */
+/* global window, document, $, requestAnimationFrame, Audio, AudioContext, URL */
+
 const createSwarm = require('killa-beez');
-const funky = require('funky');
 const getUserMedia = require('getusermedia');
 const qs = require('querystring');
 const mediaRecorder = require('media-recorder-stream');
 const bel = require('bel');
-const dragDrop = require('drag-drop');
 const FileWriteStream = require('filestream/write');
 const context = new AudioContext();
 const waudio = require('waudio')(context);
 const asyncLoad = require('async-load');
 const xhr = require('xhr');
+const UserStorage = require('./lib/storage');
+
+// Views
+const dragDrop = require('./lib/views/drag-drop');
+const homeButtons = require('./lib/views/main');
+const audioFile = require('./lib/views/audio-file');
+const remoteAudio = require('./lib/views/remote-audio');
+const settingsModal = require('./lib/views/settings-modal');
 
 // Convenience functions
 const byId = id => document.getElementById(id);
@@ -24,25 +31,8 @@ const signalHost = 'https://signalexchange.now.sh';
 const roomHost = 'https://roomexchange.now.sh';
 const zipurl = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js';
 
-const STORAGE_KEY = 'roll-call';
-const Storage = {
-  get(key) {
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-
-    if (typeof key === 'undefined') {
-      return data;
-    }
-
-    return data[key] || null;
-  },
-
-  set(key, value) {
-    const data = Storage.get();
-    data[key] = value;
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }
-};
+// Create User storage instance
+const storage = new UserStorage();
 
 const recordButton = bel `
 <button id="record" class="ui compact labeled icon button">
@@ -55,47 +45,6 @@ const settingsButton = bel `
 <button id="settings" class="ui compact labeled icon button">
   <i class="settings icon"></i><span>Settings</span>
 </button>
-`;
-
-const audioFileView = funky `
-<div class="card">
-  <div style="height:49px;width:290">
-    <canvas id="canvas"
-      width="290"
-      height="49"
-      class="person"
-      >
-    </canvas>
-  </div>
-  <div class="extra content">
-    <div class="header person-name">${name => name}</div>
-    <div class="volume">
-      <i class="icon play play-button"></i>
-      <input type="range" min="0" max="2" step=".05" />
-    </div>
-  </div>
-</div>
-`;
-
-const settingsModalView = funky `
-  <div id="settings" class="ui modal">
-    <i class="close icon"></i>
-    <div class="header">Settings</div>
-  <div class="image content">
-    <div class="ui two column centered grid description">
-      <div class="ui form column">
-        <div class="field">
-          <label for="username">Name</label>
-          <input type="text" name="username" placeholder="Enter your name" value="${item => item.username || ''}">
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="actions">
-    <div class="ui button cancel">Cancel</div>
-    <div class="ui button approve">Save</div>
-  </div>
-</div>
 `;
 
 class Output {
@@ -117,26 +66,15 @@ class Output {
 }
 
 function addAudioFile(file) {
-  let elem = audioFileView(file.name)
-  let audio = new Audio()
-  let button = elem.querySelector('i.play-button')
-  audio.src = URL.createObjectURL(file)
-  connectAudio(audio, true, elem)
-  let play = () => {
-    audio.play()
-    $(button).removeClass('play').addClass('stop')
-    button.onclick = stop
-  }
-  let stop = () => {
-    audio.pause()
-    audio.currentTime = 0
-    $(button).removeClass('stop').addClass('play')
-    button.onclick = play
-  }
-  audio.onended = stop
-  button.onclick = play
-  byId('audio-container').appendChild(elem)
-  return elem.volume
+  const audio = new Audio();
+  audio.src = URL.createObjectURL(file);
+
+  const elem = audioFile(file, audio);
+
+  connectAudio(audio, true, elem);
+  byId('audio-container').appendChild(elem);
+
+  return elem.volume;
 }
 
 function recordingName(pubkey, delay) {
@@ -382,60 +320,26 @@ function joinRoom(room) {
         }
       })
 
-      const modal = settingsModalView(Storage.get());
+      document.getElementById('audio-container').appendChild(p);
+      document.body.appendChild(recordButton);
+      document.body.appendChild(settingsButton);
 
-      document.getElementById('audio-container').appendChild(p)
-      document.body.appendChild(recordButton)
-      document.body.appendChild(settingsButton)
-      document.body.appendChild(modal)
+      settingsModal(storage).then((modal) => {
+        document.body.appendChild(modal);
+        settingsButton.onclick = () => $(modal).modal('show');
+      });
 
       recordButton.onclick = recording(swarm, output.stream)
-      settingsButton.onclick = showOptions(modal);
 
-      dragDrop('body', {
-        onDrop: function(files, pos) {
-          files.forEach(file => {
-            let gain = addAudioFile(file)
-            output.add(gain.inst)
-          })
-        },
-        onDragOver: function() {},
-        onDragLeave: function() {}
-      })
+      dragDrop((files) => {
+        files.forEach(file => {
+          let gain = addAudioFile(file)
+          output.add(gain.inst)
+        })
+      });
     })
   })
 }
-const mainButtons = funky `
-<div class="join-container">
-  <div class="ui large buttons">
-    <button id="join-party" class="ui button">Join the Party 🎉</button>
-    <div class="or"></div>
-    <button id="create-room" class="ui button">🚪 Create New Room</button>
-  </div>
-</div>`
-
-const remoteAudio = funky `
-<div class="card" id="a${item => item.key}">
-  <div style="height:49px;width:290">
-    <canvas id="canvas"
-      width="290"
-      height="49"
-      class="person"
-      >
-    </canvas>
-  </div>
-  <div class="extra content">
-    <div contenteditable="true" class="header person-name">${item => item.username}</div>
-    <div class="volume">
-      <div class="ui toggle checkbox">
-        <input type="checkbox" name="mute">
-        <label>Mute</label>
-      </div>
-      <input type="range" min="0" max="2" step=".05" />
-    </div>
-  </div>
-</div>
-`
 
 const WIDTH = 290
 const HEIGHT = 49
@@ -501,11 +405,16 @@ function connectAudio(stream, play, element) {
     stream.send(volume)
   }
 
-  let analyser = context.createAnalyser()
+  storage.on('change:device', (id) => {
+    stream.node.setSinkId(id).catch((e) => {
+      console.warn(`Could not set Audio device: ${e}`);
+    });
+  });
 
-  let volumeSelector = 'input[type=range]'
-  let muteSelector = 'input[type=checkbox]'
-  let muteElement = element.querySelector(muteSelector)
+  let analyser = context.createAnalyser();
+  let volumeSelector = 'input[type=range]';
+  let muteSelector = 'input[type=checkbox]';
+  let muteElement = element.querySelector(muteSelector);
 
   let formerGain = 1
 
@@ -548,54 +457,17 @@ function connectAudio(stream, play, element) {
 }
 
 function addPerson(stream, username) {
-  const el = remoteAudio({
-    username: username || Storage.get('username') || 'Me',
-    key: stream.publicKey || 'me'
-  });
+  return connectAudio(stream, !!username, remoteAudio(storage, stream, username));
+}
 
-  // When undefined, use username from the Storage
-  if (typeof username === 'undefined') {
-    const name = $(el).find('.person-name');
-    name.blur(() => {
-      Storage.set('username', name.html());
-    });
+$(() => {
+  if (window.location.search) {
+    let opts = qs.parse(window.location.search.slice(1))
+    if (opts.room) {
+      window.RollCallRoom = opts.room;
+      return joinRoom(opts.room);
+    }
   }
 
-  return connectAudio(stream, !!username, el);
-}
-
-function showOptions(modal) {
-  return () => {
-    // Update the modal with latest data
-    modal.update(Storage.get());
-
-    $(modal).modal({
-      onApprove() {
-        const name = $(modal).find('input[name="username"]').val();
-        // update the username on the audio tile
-        $('#ame .person-name').html(name);
-        Storage.set('username', name);
-      }
-    }).modal('show')
-  };
-}
-
-function ask() {
-  let buttons = mainButtons()
-  document.getElementById('main-container').appendChild(buttons)
-  document.getElementById('join-party').onclick = () => {
-    window.location = '?room=party'
-  }
-  document.getElementById('create-room').onclick = () => {
-    window.location = `?room=${encodeURIComponent(getRandom())}`
-  }
-}
-
-if (!window.location.search) {
-  ask()
-} else {
-  let opts = qs.parse(window.location.search.slice(1))
-  if (!opts.room) ask()
-  else joinRoom(opts.room)
-  window.RollCallRoom = opts.room
-}
+  document.body.appendChild(homeButtons);
+});
