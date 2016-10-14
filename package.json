@@ -3,6 +3,7 @@
   "version": "0.2.1",
   "description": "",
   "main": "index.js",
+  
   "scripts": {
     "start": "standard && beefy index.js:bundle.js --index index.html",
     "test": "standard"
