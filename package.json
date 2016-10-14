@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "./node_modules/.bin/beefy index.js:bundle.js 3000 --index index.html"
+    "start": "beefy index.js:bundle.js --index index.html"
   },
   "repository": {
     "type": "git",
