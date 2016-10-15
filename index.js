@@ -75,14 +75,21 @@ function addAudioFile (file) {
   let button = elem.querySelector('i.play-button')
   audio.src = URL.createObjectURL(file)
   connectAudio(audio, true, elem)
+  const gainNode = elem.volume.inst.gain
   let play = () => {
+    const now = context.currentTime
+    gainNode.setValueAtTime(0, now)
+    gainNode.linearRampToValueAtTime(elem.userGain, now + .01)
+    audio.currentTime = 0
     audio.play()
     $(button).removeClass('play').addClass('stop')
     button.onclick = stop
   }
   let stop = () => {
-    audio.pause()
-    audio.currentTime = 0
+    const now = context.currentTime
+    gainNode.setValueAtTime(elem.userGain, now)
+    gainNode.linearRampToValueAtTime(0, now + .05)
+    setTimeout(() => audio.pause(), 100)
     $(button).removeClass('stop').addClass('play')
     button.onclick = play
   }
@@ -440,7 +447,7 @@ function connectAudio (stream, play, element) {
   let muteSelector = 'input[type=checkbox]'
   let muteElement = element.querySelector(muteSelector)
 
-  let formerGain = 1
+  element.userGain = 1
 
   $(muteElement).checkbox('toggle').click(c => {
     let label = c.target.parentNode.querySelector('label')
@@ -452,13 +459,13 @@ function connectAudio (stream, play, element) {
     } else {
       c.target.parentNode.querySelector('label').textContent = 'Mute'
       element.querySelector(volumeSelector).disabled = false
-      volume.set(formerGain)
+      volume.set(element.userGain)
     }
   })
 
   $(element.querySelector(volumeSelector)).change(function () {
     volume.set(this.value)
-    formerGain = this.value
+    element.userGain = this.value
   })
   volume.send(analyser)
 
