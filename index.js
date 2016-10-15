@@ -34,8 +34,8 @@ const recordButton = bel `
 `
 
 const settingsButton = bel `
-<button id="settings" class="ui compact labeled icon button">
-  <i class="settings icon"></i><span>Settings</span>
+<button id="settings" class="ui compact button">
+  <i class="settings icon"></i>
 </button>
 `
 
