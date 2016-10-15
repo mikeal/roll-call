@@ -62,7 +62,6 @@ function addAudioFile (file) {
   audio.src = URL.createObjectURL(file)
 
   const elem = views.audioFile(file, audio, context)
-
   connectAudio(audio, true, elem)
   byId('audio-container').appendChild(elem)
 
