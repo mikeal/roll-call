@@ -77,13 +77,22 @@ function addAudioFile (file) {
   return elem.volume
 }
 
-function recordingName(pubkey, delay) {
+function recordingName (pubkey, delay) {
   let text = $(`#a${pubkey} div.person-name`).text()
   if (delay) text += '-' + delay
   return text + '.webm'
 }
 
-function connectRecording(pubkey, stream) {
+function formatFileSize (bits) {
+  const kB = bits / 1000
+  if (kB >= 1000) {
+    return Math.floor(kB / 1000) + 'MB'
+  } else {
+    return Math.floor(kB) + 'kB'
+  }
+}
+
+function connectRecording (pubkey, stream) {
   let classes = 'spinner loading icon download-icon'
   let elem = bel `
   <div class="downloads">
@@ -98,7 +107,7 @@ function connectRecording(pubkey, stream) {
   let bits = 0
   stream.on('data', data => {
     bits += data.length
-    span.textContent = Math.floor(bits / 1000) + 'k'
+    span.textContent = formatFileSize(bits)
   })
 
   let button = selector(`#a${pubkey} div.downloads div.button`)
