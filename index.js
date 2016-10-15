@@ -98,8 +98,8 @@ function recordingName (pubkey, delay) {
   return text + '.webm'
 }
 
-function formatFileSize (bits) {
-  const kB = bits / 1000
+function formatFileSize (bytes) {
+  const kB = bytes / 1000
   if (kB >= 1000) {
     return Math.floor(kB / 1000) + 'MB'
   } else {
@@ -119,10 +119,10 @@ function connectRecording (pubkey, stream) {
 
   selector(`#a${pubkey} div.extra`).appendChild(elem)
   let span = selector(`#a${pubkey} span.bits`)
-  let bits = 0
+  let bytes = 0
   stream.on('data', data => {
-    bits += data.length
-    span.textContent = formatFileSize(bits)
+    bytes += data.length
+    span.textContent = formatFileSize(bytes)
   })
   span.textContent = formatFileSize(0)
 
