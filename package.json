@@ -22,13 +22,12 @@
     "async-load": "^1.0.7",
     "bel": "^4.4.3",
     "drag-drop": "^2.12.1",
+    "filestream": "^4.1.3",
     "funky": "^1.4.0",
     "getusermedia": "^2.0.0",
     "killa-beez": "^2.3.0",
     "media-recorder-stream": "^2.1.0",
-    "recordrtc": "^5.4.0",
     "waudio": "^0.3.0",
-    "webtorrent": "^0.96.4",
     "xhr": "^2.2.2"
   },
   "devDependencies": {
