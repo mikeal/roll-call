@@ -65,16 +65,16 @@ class Output {
   }
 }
 
-function addAudioFile(file) {
-  const audio = new Audio();
-  audio.src = URL.createObjectURL(file);
+function addAudioFile (file) {
+  const audio = new Audio()
+  audio.src = URL.createObjectURL(file)
 
-  const elem = audioFile(file, audio);
+  const elem = views.audioFile(file, audio, context)
 
-  connectAudio(audio, true, elem);
-  byId('audio-container').appendChild(elem);
+  connectAudio(audio, true, elem)
+  byId('audio-container').appendChild(elem)
 
-  return elem.volume;
+  return elem.volume
 }
 
 function recordingName(pubkey, delay) {
@@ -415,7 +415,7 @@ function connectAudio(stream, play, element) {
   let muteSelector = 'input[type=checkbox]';
   let muteElement = element.querySelector(muteSelector);
 
-  let formerGain = 1
+  element.userGain = 1
 
   $(muteElement).checkbox('toggle').click(c => {
     let label = c.target.parentNode.querySelector('label')
@@ -427,13 +427,13 @@ function connectAudio(stream, play, element) {
     } else {
       c.target.parentNode.querySelector('label').textContent = 'Mute'
       element.querySelector(volumeSelector).disabled = false
-      volume.set(formerGain)
+      volume.set(element.userGain)
     }
   })
 
   $(element.querySelector(volumeSelector)).change(function() {
     volume.set(this.value)
-    formerGain = this.value
+    element.userGain = this.value
   })
   volume.send(analyser)
 
