@@ -59,13 +59,14 @@ class Output {
     let oldtracks = stream.getAudioTracks()
     this.outputStream.getAudioTracks().forEach(track => stream.addTrack(track))
     oldtracks.forEach(track => stream.removeTrack(track))
-    this.stream = this.destination.stream
+    this.stream = stream
   }
   add(audio) {
     audio.connect(this.gainFilter)
   }
 }
 
+<<<<<<< b11cb09de4f33700d9a876f4ed49b972d90016a6
 function addAudioFile(file) {
   const audio = new Audio();
   audio.src = URL.createObjectURL(file);
@@ -76,6 +77,36 @@ function addAudioFile(file) {
   byId('audio-container').appendChild(elem);
   
   return elem.volume;
+=======
+function addAudioFile (file) {
+  let elem = audioFileView(file.name)
+  let audio = new Audio()
+  let button = elem.querySelector('i.play-button')
+  audio.src = URL.createObjectURL(file)
+  connectAudio(audio, true, elem)
+  const gainNode = elem.volume.inst.gain
+  let play = () => {
+    const now = context.currentTime
+    gainNode.setValueAtTime(0, now)
+    gainNode.linearRampToValueAtTime(elem.userGain, now + .01)
+    audio.currentTime = 0
+    audio.play()
+    $(button).removeClass('play').addClass('stop')
+    button.onclick = stop
+  }
+  let stop = () => {
+    const now = context.currentTime
+    gainNode.setValueAtTime(elem.userGain, now)
+    gainNode.linearRampToValueAtTime(0, now + .05)
+    setTimeout(() => audio.pause(), 100)
+    $(button).removeClass('stop').addClass('play')
+    button.onclick = play
+  }
+  audio.onended = stop
+  button.onclick = play
+  byId('audio-container').appendChild(elem)
+  return elem.volume
+>>>>>>> Updating bundle.
 }
 
 function recordingName(pubkey, delay) {
@@ -421,7 +452,7 @@ function connectAudio(stream, play, element) {
   let muteSelector = 'input[type=checkbox]';
   let muteElement = element.querySelector(muteSelector);
 
-  let formerGain = 1
+  element.userGain = 1
 
   $(muteElement).checkbox('toggle').click(c => {
     let label = c.target.parentNode.querySelector('label')
@@ -433,13 +464,13 @@ function connectAudio(stream, play, element) {
     } else {
       c.target.parentNode.querySelector('label').textContent = 'Mute'
       element.querySelector(volumeSelector).disabled = false
-      volume.set(formerGain)
+      volume.set(element.userGain)
     }
   })
 
   $(element.querySelector(volumeSelector)).change(function() {
     volume.set(this.value)
-    formerGain = this.value
+    element.userGain = this.value
   })
   volume.send(analyser)
 
