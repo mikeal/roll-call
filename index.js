@@ -109,6 +109,7 @@ function connectRecording (pubkey, stream) {
     bits += data.length
     span.textContent = formatFileSize(bits)
   })
+  span.textContent = formatFileSize(0)
 
   let button = selector(`#a${pubkey} div.downloads div.button`)
   $(button).addClass('disabled')
