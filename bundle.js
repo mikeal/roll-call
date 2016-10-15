@@ -59,7 +59,7 @@ class Output {
     let oldtracks = stream.getAudioTracks()
     this.outputStream.getAudioTracks().forEach(track => stream.addTrack(track))
     oldtracks.forEach(track => stream.removeTrack(track))
-    this.stream = stream
+    this.stream = this.destination.stream
   }
   add(audio) {
     audio.connect(this.gainFilter)

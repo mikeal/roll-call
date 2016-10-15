@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "beefy index.js:bundle.js --index index.html"
+    "start": "standard && beefy index.js:bundle.js --index index.html",
+    "test": "standard"
   },
   "repository": {
     "type": "git",
@@ -33,6 +34,7 @@
   "devDependencies": {
     "beefy": "^2.1.8",
     "browserify": "^13.1.0",
+    "standard": "^8.4.0",
     "watchify": "^3.7.0"
   }
 }
