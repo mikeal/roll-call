@@ -420,15 +420,14 @@ function connectAudio (stream, play, element) {
 
   $(muteElement).checkbox('toggle').click(c => {
     let label = c.target.parentNode.querySelector('label')
-    let state = label.textContent
-    if (state === 'Mute') {
-      c.target.parentNode.querySelector('label').textContent = 'Muted'
-      element.querySelector(volumeSelector).disabled = true
-      volume.set(0)
-    } else {
-      c.target.parentNode.querySelector('label').textContent = 'Mute'
+    if (label.children[0].classList.contains('mute')) {
+      label.innerHTML = '<i class=\'icon unmute\'></i>'
       element.querySelector(volumeSelector).disabled = false
       volume.set(element.userGain)
+    } else {
+      label.innerHTML = '<i class=\'icon mute red\'></i>'
+      element.querySelector(volumeSelector).disabled = true
+      volume.set(0)
     }
   })
 
