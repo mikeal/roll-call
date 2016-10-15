@@ -29,6 +29,19 @@ Open Source **products** are quite rare, especially in modern open source. Many 
 
 If the goals of this project are interesting, take a look at what is being done and contribute!
 
+## To Develop
+
+Download the code and run `npm install`.
+
+If you want to do development run:
+
+```bash
+npm install
+npm start
+```
+
+## Wu-Tang Roll Call
+
 ```
 The Rza,
 the Gza,
@@ -39,15 +52,4 @@ Masta Killa,
 Method Man,
 Ghostface Killah,
 and the late great Ol Dirty Bastard.
-```
-
-## To Develop
-
-Download the code and run `npm install`.
-
-If you want to do development on the Electron app run.
-
-```bash
-npm install
-npm start
 ```
