@@ -24,7 +24,7 @@ const zipurl = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js'
 // Create User storage instance
 const storage = new UserStorage()
 
-if (typeof window.AudioContext !== 'function' || window.MediaRecorder !== 'function') {
+if (typeof window.AudioContext !== 'function' || typeof window.MediaRecorder !== 'function') {
   byId('messages-container').appendChild(views.message({
     icon: 'frown',
     type: 'warning',
