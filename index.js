@@ -1,4 +1,4 @@
-/* global window, document, $, requestAnimationFrame, Audio, AudioContext, URL */
+/* global window, document, $, requestAnimationFrame, AudioContext, URL */
 const createSwarm = require('killa-beez')
 const getUserMedia = require('getusermedia')
 const qs = require('querystring')
