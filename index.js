@@ -39,33 +39,14 @@ const settingsButton = bel `
 </button>
 `
 
-class Output {
-  constructor (stream) {
-    this.microphone = context.createMediaStreamSource(stream)
-    this.gainFilter = context.createGain()
-    this.destination = context.createMediaStreamDestination()
-    this.outputStream = this.destination.stream
-    this.microphone.connect(this.gainFilter)
-    this.gainFilter.connect(this.destination)
-    let oldtracks = stream.getAudioTracks()
-    this.outputStream.getAudioTracks().forEach(track => stream.addTrack(track))
-    oldtracks.forEach(track => stream.removeTrack(track))
-    this.stream = stream
-  }
-  add (audio) {
-    audio.connect(this.gainFilter)
-  }
-}
-
 function addAudioFile (file) {
-  const audio = new Audio()
-  audio.src = URL.createObjectURL(file)
+  let audio = waudio(file, true)
+  let elem = views.audioFile(file, audio, context)
 
-  const elem = views.audioFile(file, audio, context)
-  connectAudio(audio, true, elem)
+  connectAudio(elem, audio)
   byId('audio-container').appendChild(elem)
 
-  return elem.volume
+  return audio
 }
 
 function recordingName (pubkey, delay) {
@@ -296,8 +277,9 @@ function joinRoom (room) {
   getUserMedia(mediaopts, (err, audioStream) => {
     if (err) return console.error(err)
     if (!audioStream) return console.error('no audio')
-    let output = new Output(audioStream.clone())
-    let p = addPerson(output)
+    let output = waudio(audioStream.clone())
+    let myelem = views.remoteAudio(storage)
+    connectAudio(myelem, output)
 
     getRtcConfig((err, rtcConfig) => {
       if (err) console.error(err) // non-fatal error
@@ -308,13 +290,11 @@ function joinRoom (room) {
       })
       swarm.joinRoom(roomHost, room)
       swarm.on('stream', stream => {
-        stream.peer.audioStream = stream
-        stream.publicKey = stream.peer.publicKey
-
-        const remotes = values(swarm.peers).length
-        const elem = addPerson(stream, `Caller (${remotes})`)
-
-        elem.audioStream = stream
+        let audio = waudio(stream, true)
+        let remotes = values(swarm.peers).length
+        let publicKey = stream.peer.publicKey
+        let elem = views.remoteAudio(storage, `Caller (${remotes})`, publicKey)
+        connectAudio(elem, audio)
         byId('audio-container').appendChild(elem)
       })
       swarm.on('disconnect', pubKey => {
@@ -325,7 +305,7 @@ function joinRoom (room) {
         }
       })
 
-      document.getElementById('audio-container').appendChild(p)
+      document.getElementById('audio-container').appendChild(myelem)
       document.body.appendChild(recordButton)
       document.body.appendChild(views.shareButton())
       document.body.appendChild(settingsButton)
@@ -339,8 +319,9 @@ function joinRoom (room) {
 
       views.dragDrop((files) => {
         files.forEach(file => {
-          let gain = addAudioFile(file)
-          output.add(gain.inst)
+          let audio = addAudioFile(file)
+          // output.add(gain.inst)
+          audio.connect(output)
         })
       })
     })
@@ -400,17 +381,7 @@ function startLoop () {
   looping = true
 }
 
-function connectAudio (stream, play, element) {
-  let volume
-  if (stream instanceof Output) {
-    volume = waudio(stream.gainFilter)
-    stream = waudio(stream.stream)
-  } else {
-    stream = waudio(stream)
-    volume = waudio.gain()
-    stream.send(volume)
-  }
-
+function connectAudio (element, audio) {
   let analyser = context.createAnalyser()
   let volumeSelector = 'input[type=range]'
   let muteSelector = 'input[type=checkbox]'
@@ -420,22 +391,23 @@ function connectAudio (stream, play, element) {
 
   $(muteElement).checkbox('toggle').click(c => {
     let label = c.target.parentNode.querySelector('label')
-    if (label.children[0].classList.contains('mute')) {
-      label.innerHTML = '<i class=\'icon unmute\'></i>'
-      element.querySelector(volumeSelector).disabled = false
-      volume.set(element.userGain)
-    } else {
-      label.innerHTML = '<i class=\'icon mute red\'></i>'
+    let state = label.textContent
+    if (state === 'Mute') {
+      c.target.parentNode.querySelector('label').textContent = 'Muted'
       element.querySelector(volumeSelector).disabled = true
-      volume.set(0)
+      audio.volume(0)
+    } else {
+      c.target.parentNode.querySelector('label').textContent = 'Mute'
+      element.querySelector(volumeSelector).disabled = false
+      audio.volume(element.userGain)
     }
   })
 
   $(element.querySelector(volumeSelector)).change(function () {
-    volume.set(this.value)
+    audio.volume(this.value)
     element.userGain = this.value
   })
-  volume.send(analyser)
+  audio.connect(analyser)
 
   var canvas = element.querySelector('canvas.person')
   canvas.canvasCtx = canvas.getContext('2d')
@@ -445,18 +417,7 @@ function connectAudio (stream, play, element) {
   canvas.analyser = analyser
   startLoop()
 
-  if (play) {
-    volume.output()
-  }
-
-  element.stream = stream
-  element.volume = volume
-
   return element
-}
-
-function addPerson (stream, username) {
-  return connectAudio(stream, !!username, views.remoteAudio(storage, stream, username))
 }
 
 $(() => {

@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "standard && beefy index.js:bundle.js --index index.html",
+    "start": "beefy index.js:bundle.js --index index.html",
     "test": "standard"
   },
   "repository": {
@@ -27,7 +27,7 @@
     "getusermedia": "^2.0.0",
     "killa-beez": "^2.3.0",
     "media-recorder-stream": "^2.1.0",
-    "waudio": "^0.3.0",
+    "waudio": "^2.1.0",
     "xhr": "^2.2.2"
   },
   "devDependencies": {
