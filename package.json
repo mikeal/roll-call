@@ -21,6 +21,7 @@
   "dependencies": {
     "async-load": "^1.0.7",
     "bel": "^4.4.3",
+    "clipboard": "^1.5.12",
     "drag-drop": "^2.12.1",
     "filestream": "^4.1.3",
     "funky": "^1.4.0",

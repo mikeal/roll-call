@@ -34,7 +34,7 @@ const recordButton = bel `
 `
 
 const settingsButton = bel `
-<button id="settings" class="ui compact button">
+<button id="settings" class="ui compact icon button">
   <i class="settings icon"></i>
 </button>
 `
@@ -312,6 +312,7 @@ function joinRoom (room) {
 
       document.getElementById('audio-container').appendChild(myelem)
       document.body.appendChild(recordButton)
+      document.body.appendChild(views.shareButton())
       document.body.appendChild(settingsButton)
 
       views.settingsModal(storage).then((modal) => {
