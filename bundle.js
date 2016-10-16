@@ -40,34 +40,14 @@ const settingsButton = bel `
 </button>
 `
 
-class Output {
-  constructor (stream) {
-    this.microphone = context.createMediaStreamSource(stream)
-    this.gainFilter = context.createGain()
-    this.destination = context.createMediaStreamDestination()
-    this.outputStream = this.destination.stream
-    this.microphone.connect(this.gainFilter)
-    this.gainFilter.connect(this.destination)
-    let oldtracks = stream.getAudioTracks()
-    this.outputStream.getAudioTracks().forEach(track => stream.addTrack(track))
-    oldtracks.forEach(track => stream.removeTrack(track))
-    this.stream = stream
-  }
-  add (audio) {
-    audio.connect(this.gainFilter)
-  }
-}
-
 function addAudioFile (file) {
-  const audio = new Audio()
-  audio.src = URL.createObjectURL(file)
+  let audio = waudio(file, true)
+  let elem = views.audioFile(file, audio, context)
 
-  const elem = views.audioFile(file, audio, context)
-
-  connectAudio(audio, true, elem)
+  connectAudio(elem, audio)
   byId('audio-container').appendChild(elem)
 
-  return elem.volume
+  return audio
 }
 
 function recordingName (pubkey, delay) {
@@ -298,8 +278,9 @@ function joinRoom (room) {
   getUserMedia(mediaopts, (err, audioStream) => {
     if (err) return console.error(err)
     if (!audioStream) return console.error('no audio')
-    let output = new Output(audioStream.clone())
-    let p = addPerson(output)
+    let output = waudio(audioStream.clone())
+    let myelem = views.remoteAudio(storage)
+    connectAudio(myelem, output)
 
     getRtcConfig((err, rtcConfig) => {
       if (err) console.error(err) // non-fatal error
@@ -310,13 +291,11 @@ function joinRoom (room) {
       })
       swarm.joinRoom(roomHost, room)
       swarm.on('stream', stream => {
-        stream.peer.audioStream = stream
-        stream.publicKey = stream.peer.publicKey
-
-        const remotes = values(swarm.peers).length
-        const elem = addPerson(stream, `Caller (${remotes})`)
-
-        elem.audioStream = stream
+        let audio = waudio(stream, true)
+        let remotes = values(swarm.peers).length
+        let publicKey = stream.peer.publicKey
+        let elem = views.remoteAudio(storage, `Caller (${remotes})`, publicKey)
+        connectAudio(elem, audio)
         byId('audio-container').appendChild(elem)
       })
       swarm.on('disconnect', pubKey => {
@@ -327,7 +306,7 @@ function joinRoom (room) {
         }
       })
 
-      document.getElementById('audio-container').appendChild(p)
+      document.getElementById('audio-container').appendChild(myelem)
       document.body.appendChild(recordButton)
       document.body.appendChild(settingsButton)
 
@@ -340,8 +319,9 @@ function joinRoom (room) {
 
       views.dragDrop((files) => {
         files.forEach(file => {
-          let gain = addAudioFile(file)
-          output.add(gain.inst)
+          let audio = addAudioFile(file)
+          // output.add(gain.inst)
+          audio.connect(output)
         })
       })
     })
@@ -401,17 +381,7 @@ function startLoop () {
   looping = true
 }
 
-function connectAudio (stream, play, element) {
-  let volume
-  if (stream instanceof Output) {
-    volume = waudio(stream.gainFilter)
-    stream = waudio(stream.stream)
-  } else {
-    stream = waudio(stream)
-    volume = waudio.gain()
-    stream.send(volume)
-  }
-
+function connectAudio (element, audio) {
   let analyser = context.createAnalyser()
   let volumeSelector = 'input[type=range]'
   let muteSelector = 'input[type=checkbox]'
@@ -425,19 +395,19 @@ function connectAudio (stream, play, element) {
     if (state === 'Mute') {
       c.target.parentNode.querySelector('label').textContent = 'Muted'
       element.querySelector(volumeSelector).disabled = true
-      volume.set(0)
+      audio.volume(0)
     } else {
       c.target.parentNode.querySelector('label').textContent = 'Mute'
       element.querySelector(volumeSelector).disabled = false
-      volume.set(element.userGain)
+      audio.volume(element.userGain)
     }
   })
 
   $(element.querySelector(volumeSelector)).change(function () {
-    volume.set(this.value)
+    audio.volume(this.value)
     element.userGain = this.value
   })
-  volume.send(analyser)
+  audio.connect(analyser)
 
   var canvas = element.querySelector('canvas.person')
   canvas.canvasCtx = canvas.getContext('2d')
@@ -447,18 +417,7 @@ function connectAudio (stream, play, element) {
   canvas.analyser = analyser
   startLoop()
 
-  if (play) {
-    volume.output()
-  }
-
-  element.stream = stream
-  element.volume = volume
-
   return element
-}
-
-function addPerson (stream, username) {
-  return connectAudio(stream, !!username, views.remoteAudio(storage, stream, username))
 }
 
 $(() => {
@@ -552,10 +511,10 @@ const remoteAudioView = funky `
 </div>
 `
 
-exports.remoteAudio = (storage, stream, username) => {
+exports.remoteAudio = (storage, username, publicKey) => {
   const el = remoteAudioView({
     username: username || storage.get('username') || 'Me',
-    key: stream.publicKey
+    key: publicKey
   })
 
   // When `username` is `undefined`, Audio card belongs to the current User
@@ -593,27 +552,21 @@ exports.audioFile = (file, audio, context) => {
   const button = elem.querySelector('i.play-button')
 
   const play = () => {
-    const gainNode = elem.volume.inst.gain
-    const now = context.currentTime
-    gainNode.setValueAtTime(0, now)
-    gainNode.linearRampToValueAtTime(elem.userGain, now + 0.01)
-    audio.currentTime = 0
+    audio.fadeVolume(elem.userGain, 0.01)
+    audio.seek(0)
     audio.play()
     $(button).removeClass('play').addClass('stop')
     button.onclick = stop
   }
 
   const stop = () => {
-    const gainNode = elem.volume.inst.gain
-    const now = context.currentTime
-    gainNode.setValueAtTime(elem.userGain, now)
-    gainNode.linearRampToValueAtTime(0, now + 0.05)
+    audio.fadeVolume(0, 0.05)
     setTimeout(() => audio.pause(), 100)
     $(button).removeClass('stop').addClass('play')
     button.onclick = play
   }
 
-  audio.onended = stop
+  audio.el.onended = stop
   button.onclick = play
 
   return elem
@@ -80989,106 +80942,90 @@ exports.createContext = Script.createContext = function (context) {
 };
 
 },{"indexof":223}],444:[function(require,module,exports){
+/* global Audio, Blob, File, URL */
+const record = require('media-recorder-stream')
 const MediaStream = window.MediaStream || window.webkitMediaStream
 
 module.exports = function (context) {
-  class Waudio {
-    constructor (inst) {
-      if (inst instanceof Waudio) inst = inst.inst
-      this.inst = inst
-      if (inst instanceof MediaStream) {
-        // Hack to get certain MediaStreams to work with contexts
-        this.node = new Audio()
-        this.node.src = URL.createObjectURL(inst)
-      }
-      if (!inst) {
-        this.inst = new MediaStream()
-      }
-    }
-    send (dest) {
-      if (!(dest instanceof Waudio)) {
-        dest = new Waudio(dest)
-      }
-      let source
-      if (this.inst instanceof MediaStream) {
-        source = context.createMediaStreamSource(this.inst)
-      }
-      if (this.inst instanceof Audio) {
-        source = context.createMediaElementSource(this.inst)
-      }
-      if (this.inst instanceof AudioNode) {
-        source = this.inst
-      }
-      if (this.inst instanceof GainNode) {
-        source = this.inst
-      }
-      if (!source) throw new Error('Not Implemented send for this type.')
-      source.connect(dest.getDest())
-      return dest
-    }
-    getDest () {
-      let dest
-      if (this.inst instanceof MediaStream) {
-        dest = context.createMediaStreamDestination(this.inst)
-      }
-      if (this.inst instanceof Audio) {
-        dest = context.createMediaStreamDestination(this.inst)
-      }
-      if (this.inst instanceof AudioNode) {
-        dest = this.inst
-      }
-      if (this.inst instanceof GainNode) {
-        dest = this.inst
-      }
-      if (!dest) throw new Error('Not Implemented dest for this type.')
 
-      return dest
-    }
-    mute () {
-      if (this.inst instanceof MediaStream) {
-        this.inst.getAudioTracks().forEach(t => t.enabled = false)
-      }
-      this.muted = true
-    }
-    unmute () {
-      if (this.inst instanceof MediaStream) {
-        this.inst.getAudioTracks().forEach(t => t.enabled = true)
-      }
-      this.muted = false
-    }
-    set (key, value) {
-      if (!value && typeof key === 'object') {
-        for (var k in key) {
-          this.set(k, key[k])
-        }
-        return
-      }
-      if (this.inst instanceof GainNode) {
-        this.inst.gain.value = key
-        return
-      }
-      this.inst[key] = value
-    }
-    output () {
-      if (this.inst instanceof AudioNode) {
-        this.inst.connect(context.destination)
-      }
-    }
-    toMediaStream () {
-      return context.createMediaStreamDestination(this.inst).stream
+  class MediaStreamWrapper {
+    constructor (stream) {
+      // Hack, but Chrome won't work without this
+      // We never do anything with this node, it's just a workaround
+      let node = new Audio()
+      node.src = URL.createObjectURL(stream)
+
+      this.microphone = context.createMediaStreamSource(stream)
+      this.gainFilter = context.createGain()
+      this.destination = context.createMediaStreamDestination()
+      this.microphone.connect(this.gainFilter)
+      this.gainFilter.connect(this.destination)
+      this.stream = this.destination.stream
     }
   }
 
-  let exports = inst => new Waudio(inst)
+  class Waudio {
+    constructor () {
+      this.el = new Audio()
+      this.source = context.createMediaElementSource(this.el)
+      this.gainFilter = context.createGain()
+      this.destination = context.createMediaStreamDestination()
+      this.source.connect(this.gainFilter)
+      this.gainFilter.connect(this.destination)
+      this.stream = this.destination.stream
+    }
+    connect (dest) {
+      if (dest instanceof Waudio) dest = dest.gainFilter
+      this.gainFilter.connect(dest)
+    }
+    record (opts) {
+      return record(this.stream, opts)
+    }
+    volume (value) {
+      this.gainFilter.gain.value = value
+    }
+    seek (value) {
+      this.el.currentTime = value
+    }
+    play () {
+      this.el.play()
+    }
+    pause () {
+      this.el.pause()
+    }
+    fadeVolume (value, delay) {
+      let now = context.currentTime
+      let gainNode = this.gainFilter.gain
+      gainNode.setValueAtTime(0, now)
+      gainNode.linearRampToValueAtTime(value, now + delay)
+    }
+  }
+
+
+  function createWaudio (inst, play) {
+    let waud
+    if (inst instanceof MediaStream) {
+      let wrapper = new MediaStreamWrapper(inst)
+      waud = new Waudio()
+      wrapper.gainFilter.connect(waud.gainFilter)
+    }
+    if (inst instanceof Blob || inst instanceof File) {
+      waud = new Waudio()
+      waud.el.src = URL.createObjectURL(inst)
+    }
+    if (play) waud.gainFilter.connect(context.destination)
+    return waud
+  }
+
+  let exports = createWaudio
   exports.context = context
   exports.Waudio = Waudio
-  exports.gain = inst => new Waudio(inst || context.createGain())
 
   return exports
 }
 
 
-},{}],445:[function(require,module,exports){
+},{"media-recorder-stream":254}],445:[function(require,module,exports){
 /*
  *  Copyright (c) 2016 The WebRTC project authors. All Rights Reserved.
  *
