@@ -1,4 +1,4 @@
-/* global window, document, $, requestAnimationFrame, Audio, AudioContext, URL */
+/* global window, document, $, requestAnimationFrame, AudioContext, URL */
 const createSwarm = require('killa-beez')
 const getUserMedia = require('getusermedia')
 const qs = require('querystring')
@@ -314,6 +314,7 @@ function joinRoom (room) {
       document.body.appendChild(recordButton)
       document.body.appendChild(views.shareButton())
       document.body.appendChild(settingsButton)
+      document.body.appendChild(views.shareButton())
 
       views.settingsModal(storage).then((modal) => {
         document.body.appendChild(modal)
