@@ -391,15 +391,14 @@ function connectAudio (element, audio) {
 
   $(muteElement).checkbox('toggle').click(c => {
     let label = c.target.parentNode.querySelector('label')
-    let state = label.textContent
-    if (state === 'Mute') {
-      c.target.parentNode.querySelector('label').textContent = 'Muted'
-      element.querySelector(volumeSelector).disabled = true
-      audio.volume(0)
-    } else {
-      c.target.parentNode.querySelector('label').textContent = 'Mute'
+    if (label.children[0].classList.contains('mute')) {
+      label.innerHTML = '<i class=\'icon unmute\'></i>'
       element.querySelector(volumeSelector).disabled = false
       audio.volume(element.userGain)
+    } else {
+      label.innerHTML = '<i class=\'icon mute red\'></i>'
+      element.querySelector(volumeSelector).disabled = true
+      audio.volume(0)
     }
   })
 
@@ -501,9 +500,9 @@ const remoteAudioView = funky `
   <div class="extra content">
     <div contenteditable="true" class="header person-name">${item => item.username}</div>
     <div class="volume">
-      <div class="ui toggle checkbox">
-        <input type="checkbox" name="mute">
-        <label>Mute</label>
+      <div class="checkbox">
+        <input type="checkbox" name="mute" id='mute' class='mute-checkbox'>
+        <label for='mute'><i class='unmute icon'></i></label>
       </div>
       <input type="range" min="0" max="2" step=".05" />
     </div>
