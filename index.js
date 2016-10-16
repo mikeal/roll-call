@@ -39,8 +39,12 @@ const settingsButton = bel `
 </button>
 `
 
+// This is the only
+const masterSoundOutput = waudio(true)
+
 function addAudioFile (file) {
-  let audio = waudio(file, true)
+  let audio = waudio(file)
+  audio.connect(masterSoundOutput)
   let elem = views.audioFile(file, audio, context)
 
   connectAudio(elem, audio)
@@ -290,7 +294,8 @@ function joinRoom (room) {
       })
       swarm.joinRoom(roomHost, room)
       swarm.on('stream', stream => {
-        let audio = waudio(stream, true)
+        let audio = waudio(stream)
+        audio.connect(masterSoundOutput)
         let remotes = values(swarm.peers).length
         let publicKey = stream.peer.publicKey
         let elem = views.remoteAudio(storage, `Caller (${remotes})`, publicKey)

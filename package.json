@@ -27,7 +27,7 @@
     "getusermedia": "^2.0.0",
     "killa-beez": "^2.3.0",
     "media-recorder-stream": "^2.1.0",
-    "waudio": "^2.1.0",
+    "waudio": "^2.2.0",
     "xhr": "^2.2.2"
   },
   "devDependencies": {
