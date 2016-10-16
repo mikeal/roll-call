@@ -40,6 +40,7 @@ const settingsButton = bel `
 </button>
 `
 
+<<<<<<< d061e81f76df225fd04f33cefc20492545aeaad5
 <<<<<<< dea05c1130587d4eb959b2f134c8a882b6ceb747
 class Output {
   constructor (stream) {
@@ -61,8 +62,14 @@ class Output {
 
 =======
 >>>>>>> Moving to much improved waudio library.
+=======
+// This is the only
+const masterSoundOutput = waudio(true)
+
+>>>>>>> Use master sound output for muting and global volume.
 function addAudioFile (file) {
-  let audio = waudio(file, true)
+  let audio = waudio(file)
+  audio.connect(masterSoundOutput)
   let elem = views.audioFile(file, audio, context)
 
   connectAudio(elem, audio)
@@ -312,7 +319,8 @@ function joinRoom (room) {
       })
       swarm.joinRoom(roomHost, room)
       swarm.on('stream', stream => {
-        let audio = waudio(stream, true)
+        let audio = waudio(stream)
+        audio.connect(masterSoundOutput)
         let remotes = values(swarm.peers).length
         let publicKey = stream.peer.publicKey
         let elem = views.remoteAudio(storage, `Caller (${remotes})`, publicKey)
@@ -81029,7 +81037,6 @@ module.exports = function (context) {
     }
   }
 
-
   function createWaudio (inst, play) {
     let waud
     if (inst instanceof MediaStream) {
@@ -81040,6 +81047,15 @@ module.exports = function (context) {
     if (inst instanceof Blob || inst instanceof File) {
       waud = new Waudio()
       waud.el.src = URL.createObjectURL(inst)
+    }
+    if (typeof inst === 'boolean') {
+      play = inst
+      inst = null
+    }
+    if (!inst) {
+      waud = new Waudio()
+    } else {
+      // TODO: type error.
     }
     if (play) waud.gainFilter.connect(context.destination)
     return waud
