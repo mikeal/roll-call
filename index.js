@@ -5,8 +5,6 @@ const qs = require('querystring')
 const mediaRecorder = require('media-recorder-stream')
 const bel = require('bel')
 const FileWriteStream = require('filestream/write')
-const context = new AudioContext()
-const waudio = require('waudio')(context)
 const asyncLoad = require('async-load')
 const xhr = require('xhr')
 const UserStorage = require('./lib/storage')
@@ -25,6 +23,20 @@ const zipurl = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js'
 
 // Create User storage instance
 const storage = new UserStorage()
+
+if (typeof window.AudioContext !== 'function' || window.MediaRecorder !== 'function') {
+  byId('messages-container').appendChild(views.message({
+    icon: 'frown',
+    type: 'warning',
+    title: 'Your browser is not supported',
+    message: 'To use rollcall, we recommend using the latest version of Chrome or Mozilla Firefox'
+  }))
+
+  throw new Error(`Unsupported browser ${window.navigator.userAgent}`)
+}
+
+const context = new AudioContext()
+const waudio = require('waudio')(context)
 
 const recordButton = bel `
 <button id="record" class="ui compact labeled icon button">
@@ -278,12 +290,41 @@ function joinRoom (room) {
     video: false
   }
 
+  const message = views.message({
+    icon: 'unmute',
+    title: 'Rollcall would like to access your microphone'
+  })
+
+  byId('messages-container').appendChild(message)
+
   getUserMedia(mediaopts, (err, audioStream) => {
-    if (err) return console.error(err)
-    if (!audioStream) return console.error('no audio')
+    if (err) {
+      console.error(err)
+      return message.update({
+        icon: 'unmute',
+        type: 'warning',
+        title: 'Grant access to your microphone',
+        message: `In order to use rollcall, we need you to give us your permission to use your microphone.
+          Please change your device permissions in your browser settings.`
+      })
+    }
+    if (!audioStream) {
+      return message.update({
+        icon: 'mute',
+        type: 'warning',
+        title: 'No microphone detected',
+        message: 'We could not detect your microphone, make sure you have one before using this app.'
+      })
+    }
     let output = waudio(audioStream.clone())
     let myelem = views.remoteAudio(storage)
     connectAudio(myelem, output)
+
+    message.update({
+      icon: 'notched circle loading',
+      title: 'Hang on tight',
+      message: 'We are establishing a connection to your room, please be patient...'
+    })
 
     getRtcConfig((err, rtcConfig) => {
       if (err) console.error(err) // non-fatal error
@@ -310,7 +351,8 @@ function joinRoom (room) {
         }
       })
 
-      document.getElementById('audio-container').appendChild(myelem)
+      byId('audio-container').appendChild(myelem)
+      byId('messages-container').removeChild(message)
       document.body.appendChild(recordButton)
       document.body.appendChild(views.shareButton())
       document.body.appendChild(settingsButton)
