@@ -34,7 +34,7 @@ const recordButton = bel `
 `
 
 const settingsButton = bel `
-<button id="settings" class="ui compact button">
+<button id="settings" class="ui compact icon button">
   <i class="settings icon"></i>
 </button>
 `
@@ -314,7 +314,6 @@ function joinRoom (room) {
       document.body.appendChild(recordButton)
       document.body.appendChild(views.shareButton())
       document.body.appendChild(settingsButton)
-      document.body.appendChild(views.shareButton())
 
       views.settingsModal(storage).then((modal) => {
         document.body.appendChild(modal)
