@@ -40,7 +40,7 @@ const waudio = require('waudio')(context)
 
 const recordButton = bel `
 <button id="record" class="ui compact labeled icon button">
-  <i class="unmute icon"></i>
+  <i class="circle icon"></i>
   <span>Record</span>
 </button>
 `
