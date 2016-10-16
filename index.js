@@ -328,6 +328,7 @@ function joinRoom (room) {
 
       document.getElementById('audio-container').appendChild(p)
       document.body.appendChild(recordButton)
+      document.body.appendChild(views.shareButton())
       document.body.appendChild(settingsButton)
 
       views.settingsModal(storage).then((modal) => {

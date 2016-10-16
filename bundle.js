@@ -51,7 +51,7 @@ class Output {
     let oldtracks = stream.getAudioTracks()
     this.outputStream.getAudioTracks().forEach(track => stream.addTrack(track))
     oldtracks.forEach(track => stream.removeTrack(track))
-    this.stream = this.destination.stream
+    this.stream = stream
   }
   add (audio) {
     audio.connect(this.gainFilter)
@@ -329,6 +329,7 @@ function joinRoom (room) {
 
       document.getElementById('audio-container').appendChild(p)
       document.body.appendChild(recordButton)
+      document.body.appendChild(views.shareButton())
       document.body.appendChild(settingsButton)
 
       views.settingsModal(storage).then((modal) => {
@@ -529,6 +530,29 @@ exports.mainButtons = bel `
 </div>
 `
 
+const shareButton = bel `
+<button id="share" class="ui icon compact button" data-variation="very wide">
+  <i class="add user icon"></i>
+</button>
+`
+
+exports.shareButton = () => {
+  $(shareButton).popup({
+    on: 'click',
+    hoverable: true,
+    position: 'bottom left',
+    html: `<p>Invite your friends to join the room</p><div class="ui fluid input"><input value="${window.location}"></div>`,
+    delay: {
+      hide: 800
+    },
+    onVisible () {
+      $(this).find('input').select()
+    }
+  })
+
+  return shareButton
+}
+
 const remoteAudioView = funky `
 <div class="card" id="a${item => item.key}">
   <div style="height:49px;width:290">
@@ -650,7 +674,7 @@ const settingsModalView = funky `
     <i class="close icon"></i>
     <div class="header">Settings</div>
   <div class="image content">
-    <div class="ui two column centered grid description">
+    <div class="ui two column centered stackable grid description">
       <div class="ui form column">
         <div class="field">
           <label>Name</label>
