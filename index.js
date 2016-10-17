@@ -132,7 +132,7 @@ function enableZipDownload () {
   }
 
   $('#record i')
-    .removeClass('notched circle loading')
+    .removeClass('notched circle loading red blink')
     .addClass('download')
   $('#record span')
     .text('Download Zip')
@@ -225,7 +225,7 @@ function recording (swarm, microphone) {
     }
     $('button#record i')
       .removeClass('unmute')
-      .addClass('stop')
+      .addClass('red blink')
     $('#record span')
       .text('Stop')
   }

@@ -19,6 +19,13 @@
         top: 0.4em;
         right: 0.5em;
       }
+      .blink {
+        animation: blinker 2.5s linear infinite;
+      }
+
+      @keyframes blinker {
+        70% { opacity: 0.15; }
+      }
       .main.container {
         margin-top: 55px;
       }
