@@ -298,25 +298,9 @@ function joinRoom (room) {
   byId('messages-container').appendChild(message)
 
   getUserMedia(mediaopts, (err, audioStream) => {
-    if (err) {
-      console.error(err)
-      return message.update({
-        icon: 'unmute',
-        type: 'warning',
-        title: 'Grant access to your microphone',
-        message: `In order to use rollcall, we need you to give us your permission to use your microphone.
-          Please change your device permissions in your browser settings.`
-      })
-    }
-    if (!audioStream) {
-      return message.update({
-        icon: 'mute',
-        type: 'warning',
-        title: 'No microphone detected',
-        message: 'We could not detect your microphone, make sure you have one before using this app.'
-      })
-    }
-    let output = waudio(audioStream.clone())
+    if (err) console.error(err)
+
+    let output = waudio(audioStream ? audioStream.clone() : null)
     let myelem = views.remoteAudio(storage)
     connectAudio(myelem, output)
 
@@ -353,9 +337,11 @@ function joinRoom (room) {
 
       byId('audio-container').appendChild(myelem)
       byId('messages-container').removeChild(message)
-      document.body.appendChild(recordButton)
-      document.body.appendChild(views.shareButton())
-      document.body.appendChild(settingsButton)
+
+      const topBar = byId('top-bar')
+      topBar.appendChild(settingsButton)
+      topBar.appendChild(views.shareButton())
+      topBar.appendChild(recordButton)
 
       views.settingsModal(storage).then((modal) => {
         document.body.appendChild(modal)
@@ -371,6 +357,10 @@ function joinRoom (room) {
           audio.connect(output)
         })
       })
+
+      if (!audioStream) {
+        topBar.appendChild(bel `<div class="error notice">Listening only: no audio input available.</div>`)
+      }
     })
   })
 }
