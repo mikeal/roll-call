@@ -317,13 +317,27 @@ function joinRoom (room) {
         stream: output.stream,
         config: rtcConfig
       })
+      let myinfo = {
+        username: storage.get('username') || null,
+        publicKey: swarm.publicKey
+      }
+      swarm.log.add(null, myinfo)
+      let usernames = {}
+      swarm.feed.on('data', node => {
+        let doc = node.value
+        if (doc.username && doc.publicKey) {
+          usernames[doc.publicKey] = doc.username
+          $(`#a${doc.publicKey} div.person-name`).text(doc.username)
+        }
+      })
       swarm.joinRoom(roomHost, room)
       swarm.on('stream', stream => {
         let audio = waudio(stream)
         audio.connect(masterSoundOutput)
         let remotes = values(swarm.peers).length
         let publicKey = stream.peer.publicKey
-        let elem = views.remoteAudio(storage, `Caller (${remotes})`, publicKey)
+        let username = usernames[publicKey] || `Caller (${remotes})`
+        let elem = views.remoteAudio(storage, username, publicKey)
         connectAudio(elem, audio)
         byId('audio-container').appendChild(elem)
       })
