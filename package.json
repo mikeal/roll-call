@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "beefy index.js:bundle.js --index index.html",
+    "build": "browserify index.js > bundle.js",
     "test": "standard"
   },
   "repository": {

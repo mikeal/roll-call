@@ -1,0 +1,15 @@
+language: node_js
+
+node_js:
+  - "6"
+
+cache:
+  directories:
+    - node_modules
+
+script:
+  - npm run test
+  - npm run build
+
+after_success:
+  - ./scripts/deploy.sh
