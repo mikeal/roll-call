@@ -5,8 +5,6 @@ const qs = require('querystring')
 const mediaRecorder = require('media-recorder-stream')
 const bel = require('bel')
 const FileWriteStream = require('filestream/write')
-const context = new AudioContext()
-const waudio = require('waudio')(context)
 const asyncLoad = require('async-load')
 const xhr = require('xhr')
 const UserStorage = require('./lib/storage')
@@ -26,9 +24,23 @@ const zipurl = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js'
 // Create User storage instance
 const storage = new UserStorage()
 
+if (typeof window.AudioContext !== 'function' || typeof window.MediaRecorder !== 'function') {
+  byId('messages-container').appendChild(views.message({
+    icon: 'frown',
+    type: 'warning',
+    title: 'Your browser is not supported',
+    message: 'To use rollcall, we recommend using the latest version of Chrome or Mozilla Firefox'
+  }))
+
+  throw new Error(`Unsupported browser ${window.navigator.userAgent}`)
+}
+
+const context = new AudioContext()
+const waudio = require('waudio')(context)
+
 const recordButton = bel `
 <button id="record" class="ui compact labeled icon button">
-  <i class="unmute icon"></i>
+  <i class="circle icon"></i>
   <span>Record</span>
 </button>
 `
@@ -120,7 +132,7 @@ function enableZipDownload () {
   }
 
   $('#record i')
-    .removeClass('notched circle loading')
+    .removeClass('notched circle loading red blink')
     .addClass('download')
   $('#record span')
     .text('Download Zip')
@@ -213,7 +225,7 @@ function recording (swarm, microphone) {
     }
     $('button#record i')
       .removeClass('unmute')
-      .addClass('stop')
+      .addClass('red blink')
     $('#record span')
       .text('Stop')
   }
@@ -278,12 +290,25 @@ function joinRoom (room) {
     video: false
   }
 
+  const message = views.message({
+    icon: 'unmute',
+    title: 'Rollcall would like to access your microphone'
+  })
+
+  byId('messages-container').appendChild(message)
+
   getUserMedia(mediaopts, (err, audioStream) => {
-    if (err) return console.error(err)
-    if (!audioStream) return console.error('no audio')
-    let output = waudio(audioStream.clone())
+    if (err) console.error(err)
+
+    let output = waudio(audioStream ? audioStream.clone() : null)
     let myelem = views.remoteAudio(storage)
     connectAudio(myelem, output)
+
+    message.update({
+      icon: 'notched circle loading',
+      title: 'Hang on tight',
+      message: 'We are establishing a connection to your room, please be patient...'
+    })
 
     getRtcConfig((err, rtcConfig) => {
       if (err) console.error(err) // non-fatal error
@@ -292,13 +317,27 @@ function joinRoom (room) {
         stream: output.stream,
         config: rtcConfig
       })
+      let myinfo = {
+        username: storage.get('username') || null,
+        publicKey: swarm.publicKey
+      }
+      swarm.log.add(null, myinfo)
+      let usernames = {}
+      swarm.feed.on('data', node => {
+        let doc = node.value
+        if (doc.username && doc.publicKey) {
+          usernames[doc.publicKey] = doc.username
+          $(`#a${doc.publicKey} div.person-name`).text(doc.username)
+        }
+      })
       swarm.joinRoom(roomHost, room)
       swarm.on('stream', stream => {
         let audio = waudio(stream)
         audio.connect(masterSoundOutput)
         let remotes = values(swarm.peers).length
         let publicKey = stream.peer.publicKey
-        let elem = views.remoteAudio(storage, `Caller (${remotes})`, publicKey)
+        let username = usernames[publicKey] || `Caller (${remotes})`
+        let elem = views.remoteAudio(storage, username, publicKey)
         connectAudio(elem, audio)
         byId('audio-container').appendChild(elem)
       })
@@ -310,10 +349,13 @@ function joinRoom (room) {
         }
       })
 
-      document.getElementById('audio-container').appendChild(myelem)
-      document.body.appendChild(recordButton)
-      document.body.appendChild(views.shareButton())
-      document.body.appendChild(settingsButton)
+      byId('audio-container').appendChild(myelem)
+      byId('messages-container').removeChild(message)
+
+      const topBar = byId('top-bar')
+      topBar.appendChild(settingsButton)
+      topBar.appendChild(views.shareButton())
+      topBar.appendChild(recordButton)
 
       views.settingsModal(storage).then((modal) => {
         document.body.appendChild(modal)
@@ -329,6 +371,10 @@ function joinRoom (room) {
           audio.connect(output)
         })
       })
+
+      if (!audioStream) {
+        topBar.appendChild(bel `<div class="error notice">Listening only: no audio input available.</div>`)
+      }
     })
   })
 }
