@@ -5,7 +5,6 @@ const qs = require('querystring')
 const mediaRecorder = require('media-recorder-stream')
 const bel = require('bel')
 const FileWriteStream = require('filestream/write')
-const asyncLoad = require('async-load')
 const xhr = require('xhr')
 const UserStorage = require('./lib/storage')
 const views = require('./lib/views')
@@ -19,7 +18,6 @@ const values = obj => Object.keys(obj).map(k => obj[k])
 // Services for exchanges.
 const signalHost = 'https://signalexchange.now.sh'
 const roomHost = 'https://roomexchange.now.sh'
-const zipurl = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js'
 
 // Create User storage instance
 const storage = new UserStorage()
@@ -50,6 +48,31 @@ const settingsButton = bel `
   <i class="settings icon"></i>
 </button>
 `
+
+const mimeType = [
+  'audio/webm;codecs=opus',
+  'audio/ogg;codecs=opus',
+  'audio/ogg;codecs=vorbis'
+].filter((type) => {
+  return window.MediaRecorder.isTypeSupported(type)
+})[0]
+
+const worker = new window.Worker('/worker.js')
+
+// listen for messages from the worker
+worker.onmessage = (e) => {
+  const data = e.data || {}
+
+  if (data.type === 'compressed') {
+    bel `<a href="${data.url}" download="${data.name}"></a>`.click()
+
+    $('#record i')
+      .removeClass('notched circle loading')
+      .addClass('download')
+    $('#record span')
+      .text('Download Zip')
+  }
+}
 
 // This is the only
 const masterSoundOutput = waudio(true)
@@ -124,7 +147,6 @@ function connectRecording (pubkey, stream) {
 }
 
 function enableZipDownload () {
-  if (!window.JSZip) return
   let elements = selectall('i.download-icon')
   for (let i = 0; i < elements.length; i++) {
     let el = elements[i]
@@ -146,28 +168,19 @@ function enableZipDownload () {
     $('#record span')
       .text('Loading...')
 
-    let zip = new window.JSZip()
-    let folder = zip.folder(`${window.RollCallRoom}-tracks`)
-    Array(...selectall('div.record-download')).forEach(button => {
-      let name = recordingName(button.publicKey, button.recordingDelay)
-      let file = button.recordingFile
-      folder.file(name, file)
-    })
-    zip.generateAsync({
-      type: 'blob'
-    }).then(blob => {
-      let n = `${window.RollCallRoom}.zip`
-      bel `<a href="${URL.createObjectURL(blob)}" download="${n}"></a>`.click()
-
-      $('#record i')
-        .removeClass('notched circle loading')
-        .addClass('download')
-      $('#record span')
-        .text('Download Zip')
-
-      recordButton.onclick = downloadZip
+    // inform worker to create a zip file
+    worker.postMessage({
+      type: 'compress',
+      room: window.RollCallRoom,
+      files: Array(...selectall('div.record-download')).map(button => {
+        return {
+          name: recordingName(button.publicKey, button.recordingDelay),
+          file: button.recordingFile
+        }
+      })
     })
   }
+
   recordButton.onclick = downloadZip
 }
 
@@ -178,7 +191,7 @@ function recording (swarm, microphone) {
 
   function startRecording () {
     let me = mediaRecorder(microphone, {
-      mimeType: 'audio/webm;codecs=opus'
+      mimeType
     })
     let writer = FileWriteStream()
     me.pipe(writer)
@@ -220,9 +233,8 @@ function recording (swarm, microphone) {
         .addClass('notched circle loading')
       $('#record span')
         .text('Loading...')
-
-      asyncLoad(zipurl).then(enableZipDownload)
     }
+
     $('button#record i')
       .removeClass('unmute')
       .addClass('red blink')
@@ -237,7 +249,7 @@ function recording (swarm, microphone) {
     rpc.record = () => {
       $(recordButton).addClass('disabled')
       stream = mediaRecorder(microphone, {
-        mimeType: 'audio/webm;codecs=opus'
+        mimeType
       })
       stream.pipe(peer.meth.stream(`recording:${swarm.publicKey}`))
     }
@@ -362,7 +374,13 @@ function joinRoom (room) {
         settingsButton.onclick = () => $(modal).modal('show')
       })
 
-      recordButton.onclick = recording(swarm, output.stream)
+      // Show a warning message if a user can not record audio
+      if (typeof mimeType !== 'string') {
+        recordButton.setAttribute('disabled', true)
+        $(recordButton).find('span').html(`Recording not supported`)
+      } else {
+        recordButton.onclick = recording(swarm, output.stream)
+      }
 
       views.dragDrop((files) => {
         files.forEach(file => {
