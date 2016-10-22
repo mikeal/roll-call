@@ -37,6 +37,7 @@ $(() => {
 /* global window, document, $, HTMLElement, customElements, AudioContext, URL */
 const createSwarm = require('killa-beez')
 const getUserMedia = require('getusermedia')
+const funky = require('funky')
 const xhr = require('xhr')
 const bel = require('bel')
 const mediaRecorder = require('media-recorder-stream')
@@ -76,45 +77,64 @@ function getRtcConfig (cb) {
 const defaultSignalHost = 'https://signalexchange.now.sh'
 const defaultRoomHost = 'https://roomexchange.now.sh'
 
-class RollCall extends HTMLElement {
-  constructor (self) {
-    self = super(self)
+function shaolin (strings, ...values) {
+  let view = funky(strings, ...values)
+  class Shaolin extends HTMLElement {
+    constructor (self) {
+      self = super(self)
+      self.view = view
+      let child = view(self.getAttributes())
+      self.appendChild(child)
+    }
 
-    console.log('asdfasdfasdf')
+    getAttributes () {
+      console.log('get attributes')
+      return Object.assign({}, this.dataset)
+    }
+  }
+  return Shaolin
+}
 
-    this.storage = new UserStorage()
-    this.masterSoundOutput = waudio(true)
-
-    this.mainContainer = bel`
-    <div id="main-container" class="ui main text container">
-      <div id="messages-container"></div>
-      <div id="tracks-container" class="ui items"></div>
-      <div id="audio-container" class="ui special cards"></div>
-    </div>`
-    this.appendChild(this.mainContainer)
-
-    this.topBar = bel`<div id="top-bar"></div>`
-    this.appendChild(this.topBar)
-
-    this.recordButton = bel `
+const RollCallBase = shaolin`
+<div style="nothing">
+  <div id="top-bar">
+    <button id="settings" class="ui compact icon button">
+      <i class="settings icon"></i>
+    </button>
+    ${views.shareButton()}
     <button id="record" class="ui compact labeled icon button">
       <i class="circle icon"></i>
       <span>Record</span>
     </button>
-    `
-    // this.topBar.appendChild(this.recordButton)
+  </div>
+  <div id="main-container" class="ui main text container">
+    <div id="messages-container"></div>
+    <div id="tracks-container" class="ui items"></div>
+    <div id="audio-container" class="ui special cards"></div>
+  </div>
+</div>`
 
-    this.settingsButton = bel `
-    <button id="settings" class="ui compact icon button">
-      <i class="settings icon"></i>
-    </button>
-    `
-    this.topBar.appendChild(this.settingsButton)
+class RollCall extends RollCallBase {
+  constructor (self) {
+    self = super(self)
 
-    this.worker = new window.Worker('/worker.js')
+    console.log('aasdfsdaf')
+
+    self.storage = new UserStorage()
+
+    console.log('storage', self.storage)
+    self.masterSoundOutput = waudio(true)
+
+    views.settingsModal(self.storage).then((modal) => {
+      document.body.appendChild(modal)
+      let settingsButton = self.querySelector('button#settings')
+      settingsButton.onclick = () => $(modal).modal('show')
+    })
+
+    self.worker = new window.Worker('./worker.js')
 
     // listen for messages from the worker
-    this.worker.onmessage = (e) => {
+    self.worker.onmessage = (e) => {
       const data = e.data || {}
 
       if (data.type === 'compressed') {
@@ -130,6 +150,9 @@ class RollCall extends HTMLElement {
   }
 
   connectedCallback () {
+    console.log('connected')
+    console.log(this)
+    console.log('storage', this.storage)
     // We only connect to the room once we are attached to the DOM.
     // This way we give plenty of time for any attributes to be set.
     if (!this.inRoom && this.getAttribute('room')) {
@@ -143,12 +166,14 @@ class RollCall extends HTMLElement {
 
     this.inRoom = room
 
+    console.log(this.storage)
+
     const deviceId = this.storage.get('input')
     const signalHost = $(this).attr('signalHost') || defaultSignalHost
     const roomHost = $(this).attr('roomHost') || defaultRoomHost
     const worker = this.worker
-    const recordButton = this.recordButton
     const storage = this.storage
+    const recordButton = this.querySelector('button#record')
 
     const mimeType = [
       'audio/webm;codecs=opus',
@@ -412,21 +437,12 @@ class RollCall extends HTMLElement {
         byId('audio-container').appendChild(myelem)
         byId('messages-container').removeChild(message)
 
-        this.topBar.appendChild(this.settingsButton)
-        this.topBar.appendChild(views.shareButton())
-        this.topBar.appendChild(this.recordButton)
-
-        views.settingsModal(this.storage).then((modal) => {
-          document.body.appendChild(modal)
-          this.settingsButton.onclick = () => $(modal).modal('show')
-        })
-
         // Show a warning message if a user can not record audio
         if (typeof mimeType !== 'string') {
-          this.recordButton.setAttribute('disabled', true)
-          $(this.recordButton).find('span').html(`Recording not supported`)
+          recordButton.setAttribute('disabled', true)
+          $(recordButton).find('span').html(`Recording not supported`)
         } else {
-          this.recordButton.onclick = recording(swarm, output.stream)
+          recordButton.onclick = recording(swarm, output.stream)
         }
 
         views.dragDrop(files => {
@@ -438,7 +454,8 @@ class RollCall extends HTMLElement {
         })
 
         if (!audioStream) {
-          this.topBar.appendChild(bel `<div class="error notice">Listening only: no audio input available.</div>`)
+          let topBar = this.querySelector('div#top-bar')
+          topBar.appendChild(bel `<div class="error notice">Listening only: no audio input available.</div>`)
         }
       })
     })
@@ -458,7 +475,7 @@ class RollCall extends HTMLElement {
 
 customElements.define('roll-call', RollCall)
 
-},{"./connectAudio":3,"./storage":4,"./views":5,"bel":44,"filestream/write":195,"getusermedia":214,"killa-beez":296,"media-recorder-stream":327,"waudio":552,"xhr":564}],3:[function(require,module,exports){
+},{"./connectAudio":3,"./storage":4,"./views":5,"bel":44,"filestream/write":195,"funky":210,"getusermedia":214,"killa-beez":296,"media-recorder-stream":327,"waudio":552,"xhr":564}],3:[function(require,module,exports){
 /* global window, document, $, requestAnimationFrame */
 const selectall = exp => document.querySelectorAll(exp)
 
