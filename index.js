@@ -6,7 +6,7 @@ const bel = require('bel')
 const views = require('./lib/views')
 
 // Load components, they are global.
-require('./lib/components')
+require('./lib/component')
 
 if (typeof window.AudioContext !== 'function' ||
     typeof window.MediaRecorder !== 'function') {

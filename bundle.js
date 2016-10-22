@@ -7,7 +7,7 @@ const bel = require('bel')
 const views = require('./lib/views')
 
 // Load components, they are global.
-require('./lib/components')
+require('./lib/component')
 
 if (typeof window.AudioContext !== 'function' ||
     typeof window.MediaRecorder !== 'function') {
@@ -33,7 +33,7 @@ $(() => {
   byId('main-container').appendChild(views.mainButtons)
 })
 
-},{"./lib/components":2,"./lib/views":5,"bel":44,"querystring":405}],2:[function(require,module,exports){
+},{"./lib/component":2,"./lib/views":5,"bel":44,"querystring":405}],2:[function(require,module,exports){
 /* global window, document, $, HTMLElement, customElements, AudioContext, URL */
 const createSwarm = require('killa-beez')
 const getUserMedia = require('getusermedia')
