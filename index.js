@@ -8,7 +8,8 @@ const views = require('./lib/views')
 // Load components, they are global.
 require('./lib/components')
 
-if (typeof window.AudioContext !== 'function' || typeof window.MediaRecorder !== 'function') {
+if (typeof window.AudioContext !== 'function' ||
+    typeof window.MediaRecorder !== 'function') {
   byId('messages-container').appendChild(views.message({
     icon: 'frown',
     type: 'warning',
@@ -23,7 +24,8 @@ $(() => {
   if (window.location.search) {
     let opts = qs.parse(window.location.search.slice(1))
     if (opts.room) {
-      byId('roll-call-container').appendChild(bel`<roll-call room="${opts.room}" />`)
+      let elem = bel`<roll-call room="${opts.room}" />`
+      byId('roll-call-container').appendChild(elem)
       window.RollCallRoom = opts.room
     }
   }
