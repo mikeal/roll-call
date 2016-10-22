@@ -148,6 +148,7 @@ class RollCall extends HTMLElement {
     const roomHost = $(this).attr('roomHost') || defaultRoomHost
     const worker = this.worker
     const recordButton = this.recordButton
+    const storage = this.storage
 
     const mimeType = [
       'audio/webm;codecs=opus',
@@ -359,7 +360,7 @@ class RollCall extends HTMLElement {
       if (err) console.error(err)
 
       let output = waudio(audioStream ? audioStream.clone() : null)
-      let myelem = views.remoteAudio(this.storage)
+      let myelem = views.remoteAudio(storage)
       connectAudio(context, myelem, output)
 
       message.update({
@@ -448,7 +449,7 @@ class RollCall extends HTMLElement {
     audio.connect(this.masterSoundOutput)
     let elem = views.audioFile(file, audio, context)
 
-    connectAudio(elem, audio)
+    connectAudio(context, elem, audio)
     byId('audio-container').appendChild(elem)
 
     return audio
@@ -517,13 +518,13 @@ function startLoop () {
 function connectAudio (context, element, audio) {
   let analyser = context.createAnalyser()
   let volumeSelector = 'input[type=range]'
-  let muteSelector = 'input[type=checkbox]'
+  let muteSelector = 'mute-button'
   let muteElement = element.querySelector(muteSelector)
 
   element.userGain = 1
 
-  $(muteElement).checkbox('toggle').click(c => {
-    let label = c.target.parentNode.querySelector('label')
+  muteElement.onclick = () => {
+    let label = muteElement.querySelector('label')
     if (label.children[0].classList.contains('mute')) {
       label.innerHTML = '<i class=\'icon unmute\'></i>'
       element.querySelector(volumeSelector).disabled = false
@@ -533,7 +534,7 @@ function connectAudio (context, element, audio) {
       element.querySelector(volumeSelector).disabled = true
       audio.volume(0)
     }
-  })
+  }
 
   $(element.querySelector(volumeSelector)).change(function () {
     audio.volume(this.value)
@@ -689,8 +690,9 @@ const remoteAudioView = funky `
     <div contenteditable="true" class="header person-name">${item => item.username}</div>
     <div class="volume">
       <div class="checkbox">
-        <input type="checkbox" name="mute" id='mute' class='mute-checkbox'>
-        <label for='mute'><i class='unmute icon'></i></label>
+        <mute-button>
+          <label for='mute'><i class='unmute icon'></i></label>
+        </mute-button>
       </div>
       <input type="range" min="0" max="2" step=".05" />
     </div>
