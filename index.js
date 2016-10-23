@@ -24,10 +24,12 @@ $(() => {
   if (window.location.search) {
     let opts = qs.parse(window.location.search.slice(1))
     if (opts.room) {
-      let elem = bel`<roll-call room="${opts.room}" />`
-      byId('roll-call-container').appendChild(elem)
+      let rollHTML = `<roll-call room="${opts.room}"></roll-call>`
+      byId('page-container').innerHTML = rollHTML
+      let elem = document.querySelector('roll-call')
+      byId('page-container').appendChild(elem)
       window.RollCallRoom = opts.room
     }
   }
-  byId('main-container').appendChild(views.mainButtons)
+  byId('page-container').appendChild(views.mainButtons)
 })
