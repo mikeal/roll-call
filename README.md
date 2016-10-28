@@ -2,6 +2,8 @@
 
 On the surface, **Roll Call is quite simple**. Free calls for everyone in the world.
 
+Try it now at: [rollcall.audio](https://rollcall.audio)
+
 ---
 
 With modern web technologies we should be able to make free audio calls to everyone in the world.
@@ -21,7 +23,7 @@ Admittedly, Roll Call doesn’t accomplish all of this today, but what it does d
 * Reliable audio-only calls between multiple participants.
 * Audio files can be dragged into the call window and played into the call. (This is super fun, you can see it work in the gif above, why have I never seen this before?)
 * Call recording is built-in, with podcast quality recording of every participants local audio sent continuously to the recorder.
-* Relies on almost no infrastructure, the application is quite literally hosted in [gh-pages on GitHub](https://github.com/mikeal/roll-call).
+* Relies on almost no infrastructure, the application is quite literally hosted in [gh-pages on GitHub](https://github.com/mikeal/roll-call/tree/gh-pages).
 
 ---
 
@@ -39,6 +41,13 @@ If you want to do development run:
 npm install
 npm start
 ```
+
+## Try It Out
+
+Roll Call is built and [deployed automatically](https://github.com/mikeal/roll-call/blob/master/scripts/deploy.sh):
+
+ * [rollcall.audio](https://rollcall.audio) runs the [stable](https://github.com/mikeal/roll-call/tree/stable) branch.
+ * [rollcall.audio/staging](https://rollcall.audio/staging/) runs the latest code on [master](https://github.com/mikeal/roll-call/tree/master).
 
 ## Wu-Tang Roll Call
 
