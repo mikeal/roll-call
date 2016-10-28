@@ -1,4 +1,0 @@
-#!/bin/sh
-echo "Building bundle.js"
-browserify index.js > bundle.js
-git add bundle.js
