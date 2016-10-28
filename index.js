@@ -1,4 +1,4 @@
-/* global window, document, $, requestAnimationFrame, AudioContext, URL */
+/* global window, document, $, requestAnimationFrame, AudioContext, MediaRecorder, URL */
 const createSwarm = require('killa-beez')
 const getUserMedia = require('getusermedia')
 const qs = require('querystring')
@@ -54,7 +54,11 @@ const mimeType = [
   'audio/ogg;codecs=opus',
   'audio/ogg;codecs=vorbis'
 ].filter((type) => {
-  return window.MediaRecorder.isTypeSupported(type)
+  if (typeof MediaRecorder.isTypeSupported === 'function') {
+    return MediaRecorder.isTypeSupported(type)
+  }
+
+  return false
 })[0]
 
 const worker = new window.Worker('/worker.js')
@@ -375,7 +379,7 @@ function joinRoom (room) {
       })
 
       // Show a warning message if a user can not record audio
-      if (typeof mimeType !== 'string') {
+      if (typeof mimeType !== 'string' && typeof MediaRecorder.isTypeSupported === 'function') {
         recordButton.setAttribute('disabled', true)
         $(recordButton).find('span').html(`Recording not supported`)
       } else {
