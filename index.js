@@ -27,7 +27,6 @@ $(() => {
       let rollHTML = `<roll-call room="${opts.room}"></roll-call>`
       byId('page-container').innerHTML = rollHTML
       let elem = document.querySelector('roll-call')
-      byId('page-container').appendChild(elem)
       window.RollCallRoom = opts.room
     }
   }

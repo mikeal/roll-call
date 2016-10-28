@@ -1292,7 +1292,6 @@ $(() => {
       let rollHTML = `<roll-call room="${opts.room}"></roll-call>`
       byId('page-container').innerHTML = rollHTML
       let elem = document.querySelector('roll-call')
-      byId('page-container').appendChild(elem)
       window.RollCallRoom = opts.room
     }
   }
@@ -1406,13 +1405,13 @@ const mimeType = [
 function joinRoom (rollcall, room) {
   room = `peer-call:${room}`
 
-  console.log('rollcall', rollcall)
-
   const storage = rollcall.get('storage')
 
   const deviceId = storage.get('input')
   const signalHost = rollcall.get('signalHost') || defaultSignalHost
   const roomHost = rollcall.get('roomHost') || defaultRoomHost
+
+  console.log(1)
 
   let audioopts = {
     echoCancellation: true,
@@ -1438,6 +1437,8 @@ function joinRoom (rollcall, room) {
       return Math.floor(kB) + 'kB'
     }
   }
+
+  console.log(2)
 
   function connectRecording (pubkey, stream) {
     let classes = 'spinner loading icon download-icon'
@@ -1482,6 +1483,8 @@ function joinRoom (rollcall, room) {
     return ret
   }
 
+  console.log(3)
+
   function enableZipDownload () {
     let elements = selectall('i.download-icon')
     for (let i = 0; i < elements.length; i++) {
@@ -1522,6 +1525,8 @@ function joinRoom (rollcall, room) {
 
     recordButton.onclick = downloadZip
   }
+
+  console.log(4)
 
   const recordingStreams = {}
 
@@ -1609,7 +1614,7 @@ function joinRoom (rollcall, room) {
     return startRecording
   }
 
-  console.log(1)
+  console.log(5)
 
   getUserMedia(mediaopts, (err, audioStream) => {
     if (err) console.error(err)
@@ -1619,6 +1624,8 @@ function joinRoom (rollcall, room) {
     connectAudio(context, myelem, output)
 
     const recordButton = rollcall.querySelector('button#record')
+
+    console.log(6)
 
     getRtcConfig((err, rtcConfig) => {
       if (err) console.error(err) // non-fatal error
@@ -1660,7 +1667,12 @@ function joinRoom (rollcall, room) {
         }
       })
 
-      byId('audio-container').appendChild(myelem)
+      console.log(7)
+
+      rollcall.querySelector('#audio-container').appendChild(myelem)
+
+      console.log(myelem)
+      console.log(rollcall.querySelector('#audio-container'))
 
       rollcall.set('swarm', swarm)
 
@@ -1721,7 +1733,10 @@ function init (rollcall) {
     }
   })
 
+  let roomSet = false
   rollcall.on('room', room => {
+    if (roomSet) throw new Error('Room cannot be set twice.')
+    roomSet = true
     joinRoom(rollcall, room)
   })
 }
@@ -96635,11 +96650,6 @@ function shaolin (strings, ...values) {
         }
       }
 
-      // Call on methods for initial values.
-      for (let key in self.db) {
-        self.emit(key, self.db[key])
-      }
-
       self.template = view(self.getAttributes())
       self.template.yoyoOpts.childrenOnly = true
       yo.update(this, self.template, {childrenOnly: true})
@@ -96654,7 +96664,6 @@ function shaolin (strings, ...values) {
     }
 
     update () {
-      console.log(this.template)
       let newel = this.template.processUpdate(this.getAttributes())
       yo.update(this, newel, {childrenOnly: true})
     }
