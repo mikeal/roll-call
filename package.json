@@ -1,6 +1,6 @@
 {
   "name": "roll-call",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "browserify": "^13.1.0",
-    "budo":"^9.2.1",
+    "budo": "^9.2.1",
     "standard": "^8.4.0"
   }
 }
