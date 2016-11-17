@@ -16,20 +16,20 @@ if [ "$TRAVIS_BRANCH" != "master" -a "$TRAVIS_BRANCH" != "stable" ]; then
   exit 1
 fi
 
-REV=$(git rev-parse --short HEAD)
-
-copy_assets () { cp -r vendor favicon.png index.html bundle.js $1; }
+copy_assets () { cp -r vendor favicon.png index.html bundle.js worker.js $1; }
 
 mkdir ../build
 mkdir ../build/staging
 
 git fetch origin master:remotes/origin/master stable:remotes/origin/stable
 
-git checkout origin/master
+git checkout -f origin/master
+MASTER_REV=$(git rev-parse --short HEAD)
 npm run build
 copy_assets ../build/staging
 
-git checkout origin/stable
+git checkout -f origin/stable
+STABLE_REV=$(git rev-parse --short HEAD)
 npm run build
 copy_assets ../build
 
@@ -41,7 +41,7 @@ git config user.name "CI"
 git config user.email "ci@rollcall.audio"
 
 git add -A .
-git commit -m "Auto-build of ${REV}"
+git commit -m "Auto-build of ${MASTER_REV} (master), ${STABLE_REV} (stable)"
 git push -f "https://${GH_TOKEN}@${GH_REF}" HEAD:gh-pages > /dev/null 2>&1
 
 echo "✔ Deployed successfully."
