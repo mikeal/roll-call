@@ -2,16 +2,53 @@
 const funky = require('funky')
 const getUserMedia = require('getusermedia')
 const createSwarm = require('killa-beez')
+const emojione = require('emojione')
+const bel = require('bel')
+
 const getRtcConfig = require('../lib/getRtcConfig')
+const multiget = require('../lib/multiget')
 
 const random = () => Math.random().toString(36).substring(7)
 
-const waudioComponent = require('../components/waudio')
+const settings = require('./settings')
+const waudioComponent = require('./waudio')
 
 const removeElement = id => {
   let el = document.getElementById(id)
   el.parentNode.removeChild(el)
 }
+
+const setElem = (elem, content) => {
+  elem.innerHTML = ''
+  elem.appendChild(content)
+}
+
+const peerInfoComponent = funky`
+<peer-info>
+  <style>
+  peer-info {
+    display: flex;
+    font-family: Lato,'Helvetica Neue',Arial,Helvetica;
+    color: grey;
+    font-size: 30px;
+    padding: 5px 5px 0px 5px;
+  }
+  div.emoji img {
+    max-height: 30px;
+  }
+  div.displayname {
+    padding-left: 5px;
+  }
+  </style>
+  <div class="emoji">
+    ${doc => {
+      if (doc.emoji) return bel([emojione.toImage(doc.emoji)])
+      else return bel([emojione.toImage('🙅')])
+    }}
+  </div>
+  <div class="displayname">${doc => doc.displayname}</div>
+</peer-info>
+`
 
 const init = (elem, opts) => {
   if (!opts) opts = {}
@@ -47,17 +84,33 @@ const init = (elem, opts) => {
         stream: elem.output.stream,
         config: rtcConfig
       })
-      let myinfo = {
-        username: 'TODO',
-        publicKey: swarm.publicKey
+      audioElem.id = `a${swarm.publicKey}`
+
+      let parent = null
+      let update = () => {
+        multiget(opts.levelup, ['displayname', 'emoji'], (err, info) => {
+          if (err) return // Something went terribly wrong.
+          info.publicKey = swarm.publicKey
+          swarm.log.add(parent, info, (err, node) => {
+            if (!err) parent = node.key
+          })
+        })
       }
-      swarm.log.add(null, myinfo)
-      let usernames = {}
+      update()
+      opts.onSettingsUpdate = () => {
+        console.log('updated')
+        update()
+      }
+      let displaynames = {}
 
       swarm.feed.on('data', node => {
         let doc = node.value
-        if (doc.username && doc.publicKey) {
-          // TODO: set visual info on audio elements.
+        if (doc.displayname && doc.publicKey) {
+          let el = document.getElementById(`a${doc.publicKey}`)
+          if (el) {
+            let infoElem = el.querySelector('card-section.info')
+            setElem(infoElem, peerInfoComponent(doc))
+          }
         }
       })
 
@@ -73,9 +126,9 @@ const init = (elem, opts) => {
 
         peerElem.querySelector('input[type=range]').value = .1
 
-        // TODO: setup username and publicKey info on component
+        // TODO: setup displayname and publicKey info on component
         // let remotes = values(swarm.peers).length
-        // let username = usernames[publicKey] || `Caller (${remotes})`
+        // let displayname = displaynames[publicKey] || `Caller (${remotes})`
         elem.querySelector('rollcall-peers').appendChild(peerElem)
       })
 
@@ -84,7 +137,7 @@ const init = (elem, opts) => {
         // if (recordingStreams[publicKey]) {
         //   recordingStreams[publicKey].emit('end')
         // } else {
-            // removeElement(`a${publicKey}`)
+            removeElement(`a${publicKey}`)
         // }
 
       })
@@ -123,6 +176,12 @@ const init = (elem, opts) => {
     //   }
     })
   })
+  if (opts.levelup) {
+    elem.querySelector('rollcall-topbar').appendChild(settings(opts))
+  }
+  if (opts.recording) {
+    // TODO: Enabled recording
+  }
 }
 
 const view = funky`
@@ -132,8 +191,16 @@ ${init}
     rollcall-peers {
       width: 100%;
       display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+    }
+    rollcall-peers waudio-card {
+      margin: 2px 2px 2px 2px;
     }
   </style>
+  <rollcall-topbar>
+
+  </rollcall-topbar>
   <rollcall-peers>
   </rollcall-peers>
 </rollcall-call>
