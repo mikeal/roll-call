@@ -6,11 +6,13 @@ const emojione = require('emojione')
 const volumeInit = (elem, opts) => {
   const input = elem.querySelector('input[type=range]')
   if (opts.audio) {
-    input.onchange = () => {
-      opts.audio.volume(input.value)
-    }
+    input.oninput = () => opts.audio.volume(input.value)
+    input.onchange = () => opts.audio.volume(input.value)
   }
 }
+
+const micMoji = () => bel([emojione.toImage('🎙')])
+const muteMoji = () => bel([emojione.toImage('🔇')])
 
 const volumeSlider = funky`
 ${volumeInit}
@@ -79,7 +81,7 @@ ${volumeInit}
       background: #ccc;
   }
   </style>
-  <input type="range" min="0" max="2" step=".05" value="1">
+  <input type="range" min="0" max="2" step=".01" value="1">
 </volume-slider>
 `
 
@@ -89,19 +91,20 @@ const gainInit = (elem, opts) => {
   const muteButton = elem.querySelector('div.container div.mute-button')
   const mute = () => {
     opts.audio.mute()
-    muteButton.onclick = unmute
     muteButton.innerHTML = ''
-    muteButton.appendChild(bel([emojione.toImage('🔇')]))
+    muteButton.appendChild(muteMoji())
+    muteButton.onclick = unmute
     elem.querySelector('input[type=range]').disabled = true
   }
   const unmute = () => {
     opts.audio.unmute()
-    muteButton.onclick = mute
     muteButton.innerHTML = ''
-    muteButton.appendChild(bel([emojione.toImage('🎙')]))
+    muteButton.appendChild(micMoji())
+    muteButton.onclick = mute
     elem.querySelector('input[type=range]').disabled = false
   }
   muteButton.onclick = mute
+  muteButton.appendChild(micMoji())
 }
 
 const gainControl = funky`
@@ -130,7 +133,6 @@ ${gainInit}
   </style>
   <div class="container">
     <div class="mute-button">
-      ${bel([emojione.toImage('🎙')])}
     </div>
     ${volumeSlider}
   </div>
@@ -189,7 +191,6 @@ const init = (elem, opts) => {
   if (!opts.audio) throw new Error('Missing audio arguments.')
 
   let canvas = elem.querySelector('canvas')
-  console.log(opts.audio)
   let analyser = opts.audio.context.createAnalyser()
   opts.audio.connect(analyser)
 

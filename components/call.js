@@ -71,6 +71,8 @@ const init = (elem, opts) => {
         let peerElem = waudioComponent({audio: audio})
         peerElem.id = `a${publicKey}`
 
+        peerElem.querySelector('input[type=range]').value = .1
+
         // TODO: setup username and publicKey info on component
         // let remotes = values(swarm.peers).length
         // let username = usernames[publicKey] || `Caller (${remotes})`
