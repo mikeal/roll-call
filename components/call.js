@@ -11,6 +11,7 @@ const multiget = require('../lib/multiget')
 const random = () => Math.random().toString(36).substring(7)
 
 const settings = require('./settings')
+const record = require('./record')
 const waudioComponent = require('./waudio')
 
 const removeElement = id => {
@@ -85,6 +86,8 @@ const init = (elem, opts) => {
         stream: elem.output.stream,
         config: rtcConfig
       })
+      opts.swarm = swarm
+      opts.output = elem.output
       audioElem.id = `a${swarm.publicKey}`
 
       let parent = null
@@ -99,7 +102,6 @@ const init = (elem, opts) => {
       }
       if (opts.levelup) update()
       opts.onSettingsUpdate = () => {
-        console.log('updated')
         update()
       }
       let displaynames = {}
@@ -143,6 +145,10 @@ const init = (elem, opts) => {
 
       })
 
+      if (opts.levelup && opts.recording) {
+        elem.querySelector('rollcall-topbar').appendChild(record(opts))
+      }
+
     //   byId('audio-container').appendChild(myelem)
     //   byId('messages-container').removeChild(message)
 
@@ -180,15 +186,15 @@ const init = (elem, opts) => {
   if (opts.levelup) {
     elem.querySelector('rollcall-topbar').appendChild(settings(opts))
   }
-  if (opts.recording) {
-    // TODO: Enabled recording
-  }
 }
 
 const view = funky`
 ${init}
 <rollcall-call>
   <style>
+    rollcall-call {
+      width: 100%;
+    }
     rollcall-peers {
       width: 100%;
       display: flex;

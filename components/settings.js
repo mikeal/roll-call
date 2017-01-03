@@ -70,6 +70,7 @@ const settingsButtonInit = (elem, opts) => {
     })
   }
   elem.onclick = showModal
+  elem.querySelector('img').title = 'Settings'
 }
 
 const settingsButton = funky`

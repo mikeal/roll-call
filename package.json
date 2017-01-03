@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "budo index.js:bundle.js",
-    "build": "browserify index.js > bundle.js",
+    "start": "budo site.js:bundle.js",
+    "build": "browserify site.js > bundle.js",
     "test": "standard"
   },
   "repository": {
@@ -22,15 +22,23 @@
   "dependencies": {
     "async-load": "^1.0.7",
     "bel": "^4.4.3",
+    "blob-stream": "^0.1.3",
     "budo": "^9.2.1",
+    "bytewise": "^1.1.0",
     "clipboard": "^1.5.12",
     "drag-drop": "^2.12.1",
+    "emojione": "^2.2.7",
     "filestream": "^4.1.3",
-    "funky": "^1.4.0",
+    "funky": "^2.3.0",
     "getusermedia": "^2.0.0",
+    "inline-worker": "^1.1.0",
     "killa-beez": "^2.4.0",
+    "level-js": "^2.2.4",
+    "levelup": "^1.3.3",
+    "localstorage-down": "^0.6.7",
     "media-recorder-stream": "^2.1.0",
-    "waudio": "^2.2.0",
+    "sublevel": "^2.4.0",
+    "waudio": "^2.6.0",
     "xhr": "^2.2.2"
   },
   "devDependencies": {
