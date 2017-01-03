@@ -220,6 +220,7 @@ ${init}
     waudio-card card-section {
       display: flex;
       width: 100%;
+      flex-wrap: wrap;
     }
     waudio-card card-section.visualization canvas {
       height: 40px;

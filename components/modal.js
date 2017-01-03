@@ -45,5 +45,10 @@ module.exports = content => {
   blur()
   modalContainer.appendChild(content)
   body.appendChild(modal)
+
+  content.onclick = ev => {
+    ev.stopPropagation()
+  }
+
   return unblur
 }

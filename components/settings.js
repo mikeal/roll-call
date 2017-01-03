@@ -8,9 +8,6 @@ const multiget = require('../lib/multiget')
 const noop = () => {}
 
 const settingsInit = (elem, opts) => {
-  elem.onclick = ev => {
-    ev.stopPropagation()
-  }
   let inputs = [...elem.querySelectorAll('input')]
   inputs.forEach(input => {
     input.onchange = ev => {

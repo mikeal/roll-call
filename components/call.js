@@ -69,6 +69,7 @@ const init = (elem, opts) => {
   getUserMedia(opts.media, (err, mediaStream) => {
     if (err) return console.error(err)
     if (!mediaStream) return console.error('No audio stream.')
+    if (opts.onUserMedia) opts.onUserMedia(mediaStream)
 
     let audio = waudio(mediaStream)
     audio.connect(elem.microphone)
@@ -96,7 +97,7 @@ const init = (elem, opts) => {
           })
         })
       }
-      update()
+      if (opts.levelup) update()
       opts.onSettingsUpdate = () => {
         console.log('updated')
         update()
