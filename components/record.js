@@ -1,7 +1,6 @@
 const funky = require('funky')
 const bel = require('bel')
 const emojione = require('emojione')
-const blobStream = require('blob-stream')
 const sublevel = require('sublevel')
 const through2 = require('through2')
 const bytewise = require('bytewise')
@@ -14,7 +13,7 @@ const decode = bytewise.decode
 
 const storedStream = (publicKey, db) => {
   let i = -1
-  let stream = through2(function (chunk, enc, cb) {
+  let stream = through2((chunk, enc, cb) => {
     i++
     db.put(encode([publicKey, i]), chunk, err => cb(err))
   })
