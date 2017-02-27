@@ -18,7 +18,7 @@ const values = obj => Object.keys(obj).map(k => obj[k])
 // Services for exchanges.
 const signalHost = 'https://signalexchange.now.sh'
 const roomHost = 'https://roomexchange.now.sh'
-
+const CLOSE_WARNING = 'The call is still recording and will not be saved. Close the window anyway?'
 // Create User storage instance
 const storage = new UserStorage()
 
@@ -66,10 +66,8 @@ const worker = new window.Worker('/worker.js')
 // listen for messages from the worker
 worker.onmessage = (e) => {
   const data = e.data || {}
-
   if (data.type === 'compressed') {
     bel `<a href="${data.url}" download="${data.name}"></a>`.click()
-
     $('#record i')
       .removeClass('notched circle loading')
       .addClass('download')
@@ -144,7 +142,7 @@ function connectRecording (pubkey, stream) {
       let n = recordingName(pubkey, button.recordingDelay)
       bel `<a href="${URL.createObjectURL(file)}" download="${n}"></a>`.click()
     }
-
+    removeWindowCloseHandler()
     enableZipDownload()
   }
   return ret
@@ -244,6 +242,7 @@ function recording (swarm, microphone) {
       .addClass('red blink')
     $('#record span')
       .text('Stop')
+    addWindowCloseHandler()
   }
 
   function mkrpc (peer) {
@@ -325,7 +324,6 @@ function joinRoom (room) {
       title: 'Hang on tight',
       message: 'We are establishing a connection to your room, please be patient...'
     })
-
     getRtcConfig((err, rtcConfig) => {
       if (err) console.error(err) // non-fatal error
 
@@ -453,6 +451,24 @@ function startLoop () {
   draw()
   looping = true
 }
+/*
+  Custom beforeunload messages have been deprecated in most browsers
+  for security reasons, but for those that support we'll pass a
+  custom message.
+*/
+function showConfirmMessage (e = {}) {
+  let confirmationMessage = CLOSE_WARNING
+  e.returnValue = confirmationMessage
+  return confirmationMessage
+}
+
+function addWindowCloseHandler () {
+  window.addEventListener('beforeunload', showConfirmMessage)
+}
+
+function removeWindowCloseHandler () {
+  window.removeEventListener('beforeunload', showConfirmMessage)
+}
 
 function connectAudio (element, audio) {
   let analyser = context.createAnalyser()
@@ -491,7 +507,6 @@ function connectAudio (element, audio) {
 
   return element
 }
-
 $(() => {
   if (window.location.search) {
     let opts = qs.parse(window.location.search.slice(1))
