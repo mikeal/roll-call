@@ -274,7 +274,7 @@ function recording (swarm, microphone) {
 
 function getRtcConfig (cb) {
   xhr({
-    url: 'https://instant.io/rtcConfig',
+    url: 'https://instant.io/_rtcConfig',
     timeout: 10000
   }, (err, res) => {
     if (err || res.statusCode !== 200) {
