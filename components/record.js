@@ -4,6 +4,7 @@ const emojione = require('emojione')
 const sublevel = require('sublevel')
 const through2 = require('through2')
 const bytewise = require('bytewise')
+const blobStream = require('blob-stream')
 const createMediaRecorder = require('media-recorder-stream')
 
 const random = () => Math.random().toString(36).substr(7)
@@ -23,6 +24,59 @@ const storedStream = (publicKey, db) => {
   return stream
 }
 
+const initShowRecording = (elem, opts) => {
+  let db = opts.db
+  let info = opts.info
+  let streams = {}
+  let current
+  let finish = pubkey => {
+    streams[pubkey].on('finish', () => {
+      let blob = streams[pubkey].toBlob()
+      let track = recordingTrack({blob, info, publicKey: pubkey})
+    })
+    streams[pubkey].end()
+  }
+  db.createReadStream()
+  .on('data', block => {
+    let [publicKey, i] = decode(Buffer.from(block.key, 'hex'))
+    if (!streams[publicKey]) streams[publicKey] = blobStream()
+    streams[publicKey].write(block.value)
+    if (current) finish(current)
+    current = publicKey
+  })
+  .on('end', () => {
+    finish(current)
+  })
+}
+
+const recordingDetails = funky`
+${initShowRecording}
+<show-recording>
+</show-recording>
+`
+
+const initRecordedCall = (elem, opts) => {
+  let info = opts.info
+  let db = opts.db
+  let details = recordingDetails({info, db})
+  elem.querySelector('recording-link').onclick = () => {
+    // TODO: show details
+  }
+}
+
+const recordedCall = funky`
+${initRecordedCall}
+<recorded-call>
+  <style>
+  recorded-call recording-link {
+    cursor: pointer;
+    color: blue;
+  }
+  </style>
+  <recording-link>${opts => (opts.info.runtime / 100)} Seconds.</recording-link>
+</recorded-call>
+`
+
 const recordButtonInit = (elem, opts) => {
   const mime = opts.mime || {mimeType: 'audio/webm'}
   const output = opts.output
@@ -41,9 +95,10 @@ const recordButtonInit = (elem, opts) => {
     let uid = recording = random()
     let dbopts = {valueEncoding: 'buffer', keyEncoding: 'buffer'}
     let recordingDatabase = sublevel(db, uid, dbopts)
+    let starttime = Date.now()
     recordings[uid] = {db: recordingDatabase}
 
-    db.put(uid, {starttime: Date.now(), room: opts.room}, (err) => {
+    db.put(uid, {starttime, room: opts.room, uid}, (err) => {
       if (err) throw err
       values(remotes).forEach(remote => remote(uid))
       let recordingStream = createMediaRecorder(output.stream, mime)
@@ -57,7 +112,14 @@ const recordButtonInit = (elem, opts) => {
         let finish = () => {
           pending -= 1
           if (pending === 0) {
-            console.log('finished')
+            db.get(uid, (err, info) => {
+              if (err) throw err
+              info.runtime = (Date.now() - starttime)
+              console.log(info)
+              db.put(uid, info, () => {}) // TODO: clean this up.
+              let rec = recordedCall({db: recordingDatabase, info})
+              elem.parentNode.appendChild(rec)
+            })
             // TODO: Create a button for the recording
           }
         }
