@@ -6,7 +6,6 @@ const emojione = require('emojione')
 const bel = require('bel')
 
 const getRtcConfig = require('../lib/getRtcConfig')
-const multiget = require('../lib/multiget')
 
 const random = () => Math.random().toString(36).substring(7)
 
@@ -34,20 +33,15 @@ const peerInfoComponent = funky`
     font-size: 30px;
     padding: 5px 5px 0px 5px;
   }
-  div.emoji img {
+  peer-avatar img {
     max-height: 30px;
   }
-  div.displayname {
+  peer-name {
     padding-left: 5px;
   }
   </style>
-  <div class="emoji">
-    ${doc => {
-      if (doc.emoji) return bel([emojione.toImage(doc.emoji)])
-      else return bel([emojione.toImage('🙅')])
-    }}
-  </div>
-  <div class="displayname">${doc => doc.displayname}</div>
+  <peer-avatar></peer-avatar>
+  <peer-name></peer-name>
 </peer-info>
 `
 
@@ -63,7 +57,11 @@ const init = (elem, opts) => {
 
   const waudio = require('waudio')(opts.audioContext)
 
-  elem.monitor = waudio()
+  if (opts.disable_monitor) {
+    elem.monitor = waudio()
+  } else {
+    elem.monitor = waudio(undefined, true)
+  }
   elem.microphone = waudio()
   elem.output = waudio()
 
@@ -90,33 +88,6 @@ const init = (elem, opts) => {
       opts.output = elem.output
       audioElem.id = `a${swarm.publicKey}`
 
-      let parent = null
-      let update = () => {
-        multiget(opts.levelup, ['displayname', 'emoji'], (err, info) => {
-          if (err) return // Something went terribly wrong.
-          info.publicKey = swarm.publicKey
-          swarm.log.add(parent, info, (err, node) => {
-            if (!err) parent = node.key
-          })
-        })
-      }
-      if (opts.levelup) update()
-      opts.onSettingsUpdate = () => {
-        update()
-      }
-      let displaynames = {}
-
-      swarm.feed.on('data', node => {
-        let doc = node.value
-        if (doc.displayname && doc.publicKey) {
-          let el = document.getElementById(`a${doc.publicKey}`)
-          if (el) {
-            let infoElem = el.querySelector('card-section.info')
-            setElem(infoElem, peerInfoComponent(doc))
-          }
-        }
-      })
-
       swarm.joinRoom(opts.roomHost, opts.room)
 
       swarm.on('stream', stream => {
@@ -130,8 +101,6 @@ const init = (elem, opts) => {
         peerElem.querySelector('input[type=range]').value = .1
 
         // TODO: setup displayname and publicKey info on component
-        // let remotes = values(swarm.peers).length
-        // let displayname = displaynames[publicKey] || `Caller (${remotes})`
         elem.querySelector('rollcall-peers').appendChild(peerElem)
       })
 
@@ -148,39 +117,6 @@ const init = (elem, opts) => {
       if (opts.levelup && opts.recording) {
         elem.querySelector('rollcall-topbar').appendChild(record(opts))
       }
-
-    //   byId('audio-container').appendChild(myelem)
-    //   byId('messages-container').removeChild(message)
-
-    //   const topBar = byId('top-bar')
-    //   topBar.appendChild(settingsButton)
-    //   topBar.appendChild(views.shareButton())
-    //   topBar.appendChild(recordButton)
-
-    //   views.settingsModal(storage).then((modal) => {
-    //     document.body.appendChild(modal)
-    //     settingsButton.onclick = () => $(modal).modal('show')
-    //   })
-
-    //   // Show a warning message if a user can not record audio
-    //   if (typeof mimeType !== 'string' && typeof MediaRecorder.isTypeSupported === 'function') {
-    //     recordButton.setAttribute('disabled', true)
-    //     $(recordButton).find('span').html(`Recording not supported`)
-    //   } else {
-    //     recordButton.onclick = recording(swarm, output.stream)
-    //   }
-
-    //   views.dragDrop((files) => {
-    //     files.forEach(file => {
-    //       let audio = addAudioFile(file)
-    //       // output.add(gain.inst)
-    //       audio.connect(output)
-    //     })
-    //   })
-
-    //   if (!audioStream) {
-    //     topBar.appendChild(bel `<div class="error notice">Listening only: no audio input available.</div>`)
-    //   }
     })
   })
   if (opts.levelup) {

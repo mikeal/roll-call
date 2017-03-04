@@ -2,8 +2,7 @@ const funky = require('funky')
 const bel = require('bel')
 const emojione = require('emojione')
 
-const modal = require('./modal')
-const multiget = require('../lib/multiget')
+const modal = require('blur-modal')
 
 const noop = () => {}
 
@@ -41,33 +40,20 @@ ${settingsInit}
     margin-bottom: -1px;
   }
   </style>
-  <div class="setting">
-    <div class="label">Display Name</div>
-    <input type="text"
-          name="displayname"
-          value="${opts => opts.displayname || ''}"
-          />
-    <div class="label">Emoji</div>
-    <input type="text"
-          name="emoji"
-          value="${opts => opts.emoji || ''}"
-          />
-  </div>
+  <div>TODO: Sign In.</div>
 </rollcall-settings-form>
 `
 
 const settingsButtonInit = (elem, opts) => {
   const showModal = () => {
-    multiget(opts.levelup, ['displayname', 'emoji'], (err, obj) => {
-      if (err) return
-      obj.levelup = opts.levelup
-      let settings = settingsComponent(obj)
-      let unblur = modal(settings)
-      settings.unblur = () => {
-        unblur()
-        if (opts.onSettingsUpdate) opts.onSettingsUpdate()
-      }
-    })
+    let obj = {}
+    obj.levelup = opts.levelup
+    let settings = settingsComponent(obj)
+    let unblur = modal(settings)
+    settings.unblur = () => {
+      unblur()
+      if (opts.onSettingsUpdate) opts.onSettingsUpdate()
+    }
   }
   elem.onclick = showModal
   elem.querySelector('img').title = 'Settings'
