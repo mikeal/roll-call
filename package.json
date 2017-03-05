@@ -37,6 +37,7 @@
     "levelup": "^1.3.3",
     "localstorage-down": "^0.6.7",
     "media-recorder-stream": "^2.1.0",
+    "sodi-authority": "^1.2.0",
     "sublevel": "^2.4.0",
     "waudio": "^2.6.0",
     "xhr": "^2.2.2"

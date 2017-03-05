@@ -3,19 +3,16 @@ const bel = require('bel')
 const emojione = require('emojione')
 
 const modal = require('blur-modal')
-
-const noop = () => {}
+const sodiAuthority = require('../../sodi-authority')
 
 const settingsInit = (elem, opts) => {
-  let inputs = [...elem.querySelectorAll('input')]
-  inputs.forEach(input => {
-    input.onchange = ev => {
-      opts.levelup.put(ev.target.name, ev.target.value, noop)
-    }
-    input.onkeypress = ev => {
-      if (ev.keyCode === 13) elem.unblur()
-    }
-  })
+  if (!opts.token) {
+    elem.appendChild(sodiAuthority.component((err, signature) => {
+      if (err) throw err
+      opts.token = sodiAuthority.persist('token', signature)
+      elem.unblur()
+    }))
+  }
 }
 
 const settingsComponent = funky`
@@ -40,7 +37,6 @@ ${settingsInit}
     margin-bottom: -1px;
   }
   </style>
-  <div>TODO: Sign In.</div>
 </rollcall-settings-form>
 `
 

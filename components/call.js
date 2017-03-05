@@ -1,26 +1,21 @@
 /* globals AudioContext */
 const funky = require('funky')
 const getUserMedia = require('getusermedia')
-const createSwarm = require('killa-beez')
-const emojione = require('emojione')
 const bel = require('bel')
+const createSwarm = require('../../killa-beez')
 
 const getRtcConfig = require('../lib/getRtcConfig')
+const sodiAuthority = require('../../sodi-authority')
 
 const random = () => Math.random().toString(36).substring(7)
 
 const settings = require('./settings')
-const record = require('./record')
+// const record = require('./record')
 const waudioComponent = require('./waudio')
 
 const removeElement = id => {
   let el = document.getElementById(id)
   el.parentNode.removeChild(el)
-}
-
-const setElem = (elem, content) => {
-  elem.innerHTML = ''
-  elem.appendChild(content)
 }
 
 const peerInfoComponent = funky`
@@ -29,9 +24,9 @@ const peerInfoComponent = funky`
   peer-info {
     display: flex;
     font-family: Lato,'Helvetica Neue',Arial,Helvetica;
-    color: grey;
-    font-size: 30px;
-    padding: 5px 5px 0px 5px;
+    color: #3e4347;
+    padding: 0px 5px 0px 5px;
+    align-items: center;
   }
   peer-avatar img {
     max-height: 30px;
@@ -40,8 +35,10 @@ const peerInfoComponent = funky`
     padding-left: 5px;
   }
   </style>
-  <peer-avatar></peer-avatar>
-  <peer-name></peer-name>
+  <peer-avatar><img src="${opts => opts.avatar_url}" /></peer-avatar>
+  <peer-name>
+    ${opts => bel`<span><strong>@${opts.login}</strong> ${opts.name}</span>`}
+  </peer-name>
 </peer-info>
 `
 
@@ -51,9 +48,7 @@ const init = (elem, opts) => {
   if (!opts.audioContext) opts.audioContext = new AudioContext()
   if (!opts.media) opts.media = { audio: true, video: false }
 
-  // Services for exchanges.
-  if (!opts.signalHost) opts.signalHost = 'https://signalexchange.now.sh'
-  if (!opts.roomHost) opts.roomHost = 'https://roomexchange.now.sh'
+  if (!opts.token) opts.token = sodiAuthority.load('token')
 
   const waudio = require('waudio')(opts.audioContext)
 
@@ -77,12 +72,22 @@ const init = (elem, opts) => {
     let audioElem = waudioComponent({audio: audio})
     elem.querySelector('rollcall-peers').appendChild(audioElem)
 
+    opts.onSettingsUpdate = () => {
+      let me = opts.token.signature.message.user
+      let myinfo = peerInfoComponent(me)
+      console.log(me)
+      audioElem.querySelector('card-section.info').appendChild(myinfo)
+    }
+    if (opts.token) opts.onSettingsUpdate()
+
     getRtcConfig((err, rtcConfig) => {
       if (err) console.error(err) // non-fatal error
 
-      let swarm = createSwarm(opts.signalHost, {
+      let swarm = createSwarm({
         stream: elem.output.stream,
-        config: rtcConfig
+        config: rtcConfig,
+        signalHost: opts.signalHost,
+        roomHost: opts.roomHost
       })
       opts.swarm = swarm
       opts.output = elem.output
@@ -111,12 +116,13 @@ const init = (elem, opts) => {
         // } else {
             removeElement(`a${publicKey}`)
         // }
-
       })
 
-      if (opts.levelup && opts.recording) {
-        elem.querySelector('rollcall-topbar').appendChild(record(opts))
-      }
+      // Disabled until additional UX decisions are made.
+
+      // if (opts.levelup && opts.recording) {
+      //   elem.querySelector('rollcall-topbar').appendChild(record(opts))
+      // }
     })
   })
   if (opts.levelup) {
@@ -134,8 +140,8 @@ ${init}
     rollcall-peers {
       width: 100%;
       display: flex;
-      justify-content: space-around;
       flex-wrap: wrap;
+      flex-direction: column;
     }
     rollcall-peers waudio-card {
       margin: 2px 2px 2px 2px;

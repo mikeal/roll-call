@@ -1,3 +1,12 @@
+/*
+
+Un-finished multi-track recording.
+
+This has been shelved until we spec out the different modes of recording.
+There's a lot of UX decisions that need to get made before we can move
+forward.
+
+*/
 const funky = require('funky')
 const bel = require('bel')
 const emojione = require('emojione')
@@ -24,6 +33,12 @@ const storedStream = (publicKey, db) => {
   return stream
 }
 
+const recordingComponent = funky`
+<roll-call-recording>
+  <span>Test</span>
+</roll-call-recording>
+`
+
 const initShowRecording = (elem, opts) => {
   let db = opts.db
   let info = opts.info
@@ -33,6 +48,7 @@ const initShowRecording = (elem, opts) => {
     streams[pubkey].on('finish', () => {
       let blob = streams[pubkey].toBlob()
       let track = recordingTrack({blob, info, publicKey: pubkey})
+      console.log(track)
     })
     streams[pubkey].end()
   }
@@ -40,7 +56,7 @@ const initShowRecording = (elem, opts) => {
   .on('data', block => {
     let [publicKey, i] = decode(Buffer.from(block.key, 'hex'))
     if (!streams[publicKey]) streams[publicKey] = blobStream()
-    streams[publicKey].write(block.value)
+    streams[publicKey].write(Buffer.from(block.value))
     if (current) finish(current)
     current = publicKey
   })
