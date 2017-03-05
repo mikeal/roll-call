@@ -6,6 +6,7 @@ const createSwarm = require('../../killa-beez')
 
 const getRtcConfig = require('../lib/getRtcConfig')
 const sodiAuthority = require('../../sodi-authority')
+const bongBong = require('../../bong-bong/components/bong-bong')
 
 const random = () => Math.random().toString(36).substring(7)
 
@@ -71,6 +72,15 @@ const init = (elem, opts) => {
 
     let audioElem = waudioComponent({audio: audio})
     elem.querySelector('rollcall-peers').appendChild(audioElem)
+    elem.querySelector('rollcall-peers').appendChild(waudioComponent({audio: audio}))
+    elem.querySelector('rollcall-peers').appendChild(waudioComponent({audio: audio}))
+    elem.querySelector('rollcall-peers').appendChild(waudioComponent({audio: audio}))
+    elem.querySelector('rollcall-peers').appendChild(waudioComponent({audio: audio}))
+    elem.querySelector('rollcall-peers').appendChild(waudioComponent({audio: audio}))
+    elem.querySelector('rollcall-peers').appendChild(waudioComponent({audio: audio}))
+    elem.querySelector('rollcall-peers').appendChild(waudioComponent({audio: audio}))
+    elem.querySelector('rollcall-peers').appendChild(waudioComponent({audio: audio}))
+
 
     opts.onSettingsUpdate = () => {
       let me = opts.token.signature.message.user
@@ -128,6 +138,8 @@ const init = (elem, opts) => {
   if (opts.levelup) {
     elem.querySelector('rollcall-topbar').appendChild(settings(opts))
   }
+  let chatopts = {room: opts.room, disableApps: true, disableSettings: true}
+  elem.querySelector('rollcall-bong-container').appendChild(bongBong(chatopts))
 }
 
 const view = funky`
@@ -135,23 +147,67 @@ ${init}
 <rollcall-call>
   <style>
     rollcall-call {
-      width: 100%;
-    }
-    rollcall-peers {
-      width: 100%;
       display: flex;
       flex-wrap: wrap;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      padding: 2px 2px 2px 2px;
+      flex-flow: column;
+    }
+    rollcall-topbar {
+      width: 100%;
+    }
+    rollcall-content {
+      width: 100%;
+      display: flex;
+      height: 100%;
+      padding-top: 5px;
+    }
+    rollcall-peers {
+      display: flex;
       flex-direction: column;
+      overflow: scroll;
+      height: 99%;
+      margin-left: 5px;
+      padding-bottom: 2px;
+      border-bottom: 1px solid #E0E1E2;
     }
     rollcall-peers waudio-card {
       margin: 2px 2px 2px 2px;
     }
+    rollcall-chat {
+      flex-grow: 2;
+      flex-flow: column;
+      height: 100%;
+      display: flex;
+      padding-left: 5px;
+      padding-top: 2px;
+      padding-right: 7px;
+    }
+    rollcall-bong-container {
+      border-radius: 5px;
+      border: 1px solid #E0E1E2;
+      flex-flow: column;
+      height: 99%;
+    }
+    div.bb-header {
+      border-bottom: none !important;
+    }
+    bong-bong {
+      border-radius: 5px !important;
+    }
   </style>
   <rollcall-topbar>
-
   </rollcall-topbar>
-  <rollcall-peers>
-  </rollcall-peers>
+  <rollcall-content>
+    <rollcall-peers>
+    </rollcall-peers>
+    <rollcall-chat>
+      <rollcall-bong-container>
+      </rollcall-bong-container>
+    </rollcall-chat>
+  </rollcall-content>
 </rollcall-call>
 `
 module.exports = view

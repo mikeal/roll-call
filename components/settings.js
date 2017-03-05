@@ -18,25 +18,6 @@ const settingsInit = (elem, opts) => {
 const settingsComponent = funky`
 ${settingsInit}
 <rollcall-settings-form>
-  <style>
-  rollcall-settings-form,  rollcall-settings-form input[type="text"]{
-    font-family: Lato,'Helvetica Neue',Arial,Helvetica;
-    color: grey;
-    font-size: 20px;
-  }
-  rollcall-settings-form input[type="text"] {
-    padding: 10px;
-    border: solid 5px #c9c9c9;
-    transition: border 0.3s;
-  }
-  rollcall-settings-form input[type="text"]:focus,
-  rollcall-settings-form input[type="text"].focus {
-    border: solid 5px #969696;
-  }
-  rollcall-settings-form div.label {
-    margin-bottom: -1px;
-  }
-  </style>
 </rollcall-settings-form>
 `
 
@@ -61,9 +42,12 @@ ${settingsButtonInit}
   <style>
   rollcall-settings {
     cursor: pointer;
+
   }
   rollcall-settings img {
-    max-height: 30px;
+    width: 30px;
+    padding-left: 10px;
+    margin-top: 10px;
   }
   </style>
   ${bel([emojione.toImage('⚙')])}
