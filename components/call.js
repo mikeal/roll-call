@@ -2,11 +2,11 @@
 const funky = require('funky')
 const getUserMedia = require('getusermedia')
 const bel = require('bel')
+const methodman = require('methodman')
 const createSwarm = require('../../killa-beez')
 
 const getRtcConfig = require('../lib/getRtcConfig')
 const sodiAuthority = require('../../sodi-authority')
-const bongBong = require('../../bong-bong/components/bong-bong')
 
 const random = () => Math.random().toString(36).substring(7)
 
@@ -72,23 +72,23 @@ const init = (elem, opts) => {
 
     let audioElem = waudioComponent({audio: audio})
     elem.querySelector('rollcall-peers').appendChild(audioElem)
-    elem.querySelector('rollcall-peers').appendChild(waudioComponent({audio: audio}))
-    elem.querySelector('rollcall-peers').appendChild(waudioComponent({audio: audio}))
-    elem.querySelector('rollcall-peers').appendChild(waudioComponent({audio: audio}))
-    elem.querySelector('rollcall-peers').appendChild(waudioComponent({audio: audio}))
-    elem.querySelector('rollcall-peers').appendChild(waudioComponent({audio: audio}))
-    elem.querySelector('rollcall-peers').appendChild(waudioComponent({audio: audio}))
-    elem.querySelector('rollcall-peers').appendChild(waudioComponent({audio: audio}))
-    elem.querySelector('rollcall-peers').appendChild(waudioComponent({audio: audio}))
-
 
     opts.onSettingsUpdate = () => {
       let me = opts.token.signature.message.user
       let myinfo = peerInfoComponent(me)
-      console.log(me)
+      opts.me = me
+      audioElem.querySelector('card-section.info').innerHTML = ''
       audioElem.querySelector('card-section.info').appendChild(myinfo)
+      if (opts.swarm) {
+        values(opts.remotes).forEach(remote => remote.setInfo(me))
+      }
     }
     if (opts.token) opts.onSettingsUpdate()
+    else {
+      let me = defaultUser
+      let myinfo = peerInfoComponent(me)
+      audioElem.querySelector('card-section.info').appendChild(myinfo)
+    }
 
     getRtcConfig((err, rtcConfig) => {
       if (err) console.error(err) // non-fatal error
@@ -118,6 +118,18 @@ const init = (elem, opts) => {
         // TODO: setup displayname and publicKey info on component
         elem.querySelector('rollcall-peers').appendChild(peerElem)
       })
+      swarm.on('peer', peer => {
+        peer.meth.on('commands:rollcall', remote => {
+          console.log(remote)
+          remote.setInfo(opts.me)
+          opts.remotes[peer.publicKey] = remote
+        })
+        let setInfo = user => {
+          console.log(user, peer.publicKey)
+        }
+        let rpc = {setInfo}
+        peer.meth.commands(rpc, 'rollcall')
+      })
 
       swarm.on('disconnect', publicKey => {
         // TODO: Handle recording
@@ -126,6 +138,7 @@ const init = (elem, opts) => {
         // } else {
             removeElement(`a${publicKey}`)
         // }
+        delete opts.remotes[publicKey]
       })
 
       // Disabled until additional UX decisions are made.
@@ -138,8 +151,15 @@ const init = (elem, opts) => {
   if (opts.levelup) {
     elem.querySelector('rollcall-topbar').appendChild(settings(opts))
   }
-  let chatopts = {room: opts.room, disableApps: true, disableSettings: true}
-  elem.querySelector('rollcall-bong-container').appendChild(bongBong(chatopts))
+  // let container = bel`
+  // <rollcall-chat>
+  //   <rollcall-bong-container>
+  //   </rollcall-bong-container>
+  // </rollcall-chat>
+  // `
+  // elem.querySelector('rollcall-content').appendChild(container)
+  // let chatopts = {room: opts.room, disableApps: true, disableSettings: true, log}
+  // elem.querySelector('rollcall-bong-container').appendChild(bongBong(chatopts))
 }
 
 const view = funky`
@@ -161,17 +181,13 @@ ${init}
     rollcall-content {
       width: 100%;
       display: flex;
-      height: 100%;
       padding-top: 5px;
     }
     rollcall-peers {
       display: flex;
-      flex-direction: column;
-      overflow: scroll;
-      height: 99%;
+      flex-wrap: wrap;
       margin-left: 5px;
       padding-bottom: 2px;
-      border-bottom: 1px solid #E0E1E2;
     }
     rollcall-peers waudio-card {
       margin: 2px 2px 2px 2px;
@@ -184,6 +200,7 @@ ${init}
       padding-left: 5px;
       padding-top: 2px;
       padding-right: 7px;
+      padding-bottom: 2px;
     }
     rollcall-bong-container {
       border-radius: 5px;
@@ -197,16 +214,27 @@ ${init}
     bong-bong {
       border-radius: 5px !important;
     }
+    waudio-card {
+      opacity: 1;
+      animation-name: fadein;
+      animation-iteration-count: 1;
+      animation-timing-function: ease-in;
+      animation-duration: 1s;
+    }
+    @keyframes fadein {
+      0% {
+        opacity: .5;
+      }
+      100% {
+        opacity: 1;
+      }
+    }
   </style>
   <rollcall-topbar>
   </rollcall-topbar>
   <rollcall-content>
     <rollcall-peers>
     </rollcall-peers>
-    <rollcall-chat>
-      <rollcall-bong-container>
-      </rollcall-bong-container>
-    </rollcall-chat>
   </rollcall-content>
 </rollcall-call>
 `

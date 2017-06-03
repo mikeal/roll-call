@@ -170,7 +170,7 @@ const startLoop = () => {
       let barWidth = (WIDTH / bufferLength) * 5
       let barHeight
       let x = 0
-      // let total = 0
+      let total = 0
       for (var i = 0; i < bufferLength; i++) {
         barHeight = dataArray[i]
         if (barHeight > 10) {
@@ -178,9 +178,10 @@ const startLoop = () => {
           canvasCtx.fillRect(x, HEIGHT - barHeight / 2, barWidth, barHeight)
         }
         x += barWidth + 1
-        // total += barHeight
+        total += barHeight
       }
       lastTime = now
+      window.lastTotal = total
     }
   }
   draw()
