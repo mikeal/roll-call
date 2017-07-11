@@ -1,5 +1,7 @@
 # Roll Call
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/mikeal/roll-call.svg)](https://greenkeeper.io/)
+
 ![demo gif](https://cdn-images-1.medium.com/max/600/1*PPYEQEBH_KFuifS0EEdazg.gif)
 
 On the surface, **Roll Call is quite simple**. Free calls for everyone in the world.
