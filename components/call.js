@@ -4,6 +4,16 @@ const createSwarm = require('killa-beez')
 const ZComponent = require('./z-component')
 const Peer = require('./peer')
 const RecordButton = require('./record')
+const getRTCConfig = require('../lib/getRTCConfig')
+
+const getConfig = () => {
+  return new Promise((resolve, reject) => {
+    getRTCConfig((err, config) => {
+      if (err) resolve(null)
+      else resolve(config)
+    })
+  })
+}
 
 const random = () => Math.random().toString(36).substring(7)
 
@@ -27,9 +37,13 @@ class Call extends ZComponent {
       audio: true,
       video: false
     }
-    let media = await navigator.mediaDevices.getUserMedia(mediaopts)
+    let [media, config] = await Promise.all([
+      await navigator.mediaDevices.getUserMedia(mediaopts),
+      await getConfig()
+    ])
+
     let output = waudio(media)
-    let swarm = createSwarm({stream: output.stream})
+    let swarm = createSwarm({stream: output.stream, config})
     swarm.on('peer', peer => this.onPeer(peer))
 
     let record = new RecordButton()
@@ -62,7 +76,6 @@ class Call extends ZComponent {
       :host {
         display: flex;
         width: 100%;
-        overflow: hidden;
         padding: 2px 2px 2px 2px;
       }
     </style>

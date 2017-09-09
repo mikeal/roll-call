@@ -43,6 +43,12 @@ class ZComponent extends HTMLElement {
         }
       }
     })
+    ;[...this.attributes].forEach(node => {
+      let key = node.name
+      if (key.startsWith('z-')) {
+        this[key.slice('z-'.length)] = node.nodeValue
+      }
+    })
   }
   set shadow (shadow) {
     this.shadowRoot.innerHTML = shadow

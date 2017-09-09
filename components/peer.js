@@ -3,6 +3,7 @@ const ZComponent = require('./z-component')
 const Visuals = require('./visuals')
 const Volume = require('./volume')
 const znode = require('znode')
+const once = require('once')
 
 class Peer extends ZComponent {
   async attach (peer, swarm) {
@@ -20,6 +21,14 @@ class Peer extends ZComponent {
       })
       this.rpc = await znode(peer.meth.stream('znode'), this.api)
     })
+
+    let cleanup = once(() => {
+      this.parentNode.removeChild(this)
+    })
+    peer.on('error', cleanup)
+    peer.on('close', cleanup)
+
+    this.peer = peer
   }
   set audio (audio) {
     let visuals = new Visuals()
@@ -36,14 +45,10 @@ class Peer extends ZComponent {
     // Fastest connection wins.
     if (this._rpc) return
     this._rpc = val
-    this.onConnect()
+    this.onRPC(val)
   }
   get rpc () {
     return this._rpc
-  }
-  async onConnect () {
-    let rpc = this.rpc
-
   }
   get api () {
     return {
