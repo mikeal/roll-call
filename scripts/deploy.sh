@@ -25,11 +25,15 @@ git fetch origin master:remotes/origin/master stable:remotes/origin/stable
 
 git checkout -f origin/master
 MASTER_REV=$(git rev-parse --short HEAD)
+rm -rf node_modules
+npm install
 npm run build
 copy_assets ../build/staging
 
 git checkout -f origin/stable
 STABLE_REV=$(git rev-parse --short HEAD)
+rm -rf node_modules
+npm install
 npm run build
 copy_assets ../build
 
