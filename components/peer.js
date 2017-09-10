@@ -5,7 +5,14 @@ const Volume = require('./volume')
 const znode = require('znode')
 const once = require('once')
 
+const random = () => Math.random().toString(36).substring(7)
+
 class Peer extends ZComponent {
+  constructor () {
+    super()
+    this.files = {}
+    this.recordStreams = {}
+  }
   async attach (peer, swarm) {
     let speakers = swarm.speakers
 
@@ -40,6 +47,10 @@ class Peer extends ZComponent {
     volume.audio = audio
     volume.setAttribute('slot', 'volume')
     this.appendChild(volume)
+    this._audio = audio
+  }
+  get audio () {
+    return this._audio
   }
   set rpc (val) {
     // Fastest connection wins.
@@ -53,15 +64,44 @@ class Peer extends ZComponent {
   get api () {
     return {
       setName: name => this.setName(name),
-      record: (...args) => this.record(...args),
-      write: (filename, i, chunk) => this.remoteData(filename, i, chunk)
+      record: recid => this.record(recid),
+      stop: recid => this.stop(recid),
+      read: filename => this.read(filename)
     }
   }
-  async record () {
-    let rpc = this.rpc
-  }
-  async remoteData (filename, i, chunk) {
+  async read (filename) {
+    if (!this.files[filename]) throw new Error('No such file.')
 
+    let f = this.files[filename]
+    if (f.buffers.length) {
+      return f.buffers.shift()
+    }
+    if (f.closed) {
+      return null
+    }
+    return new Promise((resolve, reject) => {
+      f.stream.once('data', () => {
+        resolve(this.read(filename))
+      })
+    })
+  }
+  async record (recid) {
+    let rpc = this.rpc
+    let stream = this.audio.record({video:false, audio: true})
+    this.recordStreams[recid] = stream
+    let filename = random()
+    this.files[filename] = {stream, buffers: [], closed: false}
+    stream.on('data', chunk => this.files[filename].buffers.push(chunk))
+    let cleanup = once(() => {
+      this.files[filename].closed = true
+      stream.emit('data', null)
+    })
+    stream.on('close', cleanup)
+    stream.on('error', cleanup)
+    return filename
+  }
+  async stop (recid) {
+    return this.recordStreams[recid].stop()
   }
   get shadow () {
     return `

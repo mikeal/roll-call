@@ -59,6 +59,7 @@ class Call extends ZComponent {
     me.audio = output
     me.appendChild(bel`<span slot="peername">me</span>`)
     this.appendChild(me)
+    this.me = me
 
     swarm.joinRoom(this.roomHost, callid)
   }
@@ -75,6 +76,7 @@ class Call extends ZComponent {
     <style>
       :host {
         display: flex;
+        flex-wrap: wrap;
         width: 100%;
         padding: 2px 2px 2px 2px;
       }
