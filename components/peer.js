@@ -86,8 +86,7 @@ class Peer extends ZComponent {
     })
   }
   async record (recid) {
-    let rpc = this.rpc
-    let stream = this.audio.record({video:false, audio: true})
+    let stream = this.audio.record({video: false, audio: true})
     this.recordStreams[recid] = stream
     let filename = random()
     this.files[filename] = {stream, buffers: [], closed: false}

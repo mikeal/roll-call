@@ -15,8 +15,6 @@ const getConfig = () => {
   })
 }
 
-const random = () => Math.random().toString(36).substring(7)
-
 class Call extends ZComponent {
   constructor () {
     super()
@@ -34,7 +32,7 @@ class Call extends ZComponent {
       deviceId: device ? {exact: device} : undefined
     }
     let mediaopts = {
-      audio: true,
+      audio: audioopts,
       video: false
     }
     let [media, config] = await Promise.all([

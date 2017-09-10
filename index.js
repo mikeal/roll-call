@@ -1,4 +1,7 @@
-const components = require('./components')
+/* globals URL */
+// const components = require('./components')
+
+require('./components')
 
 const container = document.body
 

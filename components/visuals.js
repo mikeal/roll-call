@@ -1,3 +1,4 @@
+/* global requestAnimationFrame */
 const ZComponent = require('./z-component')
 
 let looping

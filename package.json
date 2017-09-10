@@ -21,7 +21,8 @@
   "homepage": "https://github.com/mikeal/roll-call#readme",
   "devDependencies": {
     "browserify": "^14.4.0",
-    "budo": "^10.0.4"
+    "budo": "^10.0.4",
+    "standard": "^10.0.3"
   },
   "dependencies": {
     "bel": "^5.1.0",

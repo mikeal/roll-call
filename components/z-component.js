@@ -1,8 +1,8 @@
+/* globals MutationObserver,HTMLElement */
 const observer = (element, onAttributes) => {
   var observer = new MutationObserver(mutations => {
     let attributes = Object.assign({},
-      ...
-      mutations
+      ...mutations
       .filter(m => m.type === 'attributes')
       .map(m => m.attributeName)
       .map(attr => {
@@ -33,7 +33,7 @@ class ZComponent extends HTMLElement {
     super()
     let shadow = this.shadow
     if (shadow) {
-      let shadowRoot = this.attachShadow({mode: 'open'});
+      let shadowRoot = this.attachShadow({mode: 'open'})
       shadowRoot.innerHTML = shadow
     }
     observer(this, attributes => {

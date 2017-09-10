@@ -1,5 +1,5 @@
+/* globals Blob, URL */
 const ZComponent = require('./z-component')
-const waudio = require('./waudio')
 const once = require('once')
 const bel = require('bel')
 const emojione = require('emojione')
@@ -142,8 +142,8 @@ class Recorder extends ZComponent {
   }
   stop () {
     let recid = this.recording
-    let starttime = this.recordStart
-    let files = this.files
+    // let starttime = this.recordStart
+    // let files = this.files
     delete this.recording
     delete this.recordStart
     delete this.files
