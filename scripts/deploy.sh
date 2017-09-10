@@ -16,7 +16,9 @@ if [ "$TRAVIS_BRANCH" != "master" -a "$TRAVIS_BRANCH" != "stable" ]; then
   exit 1
 fi
 
+copy_assets_old () { cp -r vendor favicon.png index.html bundle.js worker.js $1; }
 copy_assets () { cp -r favicon.png index.html bundle.js worker.js $1; }
+
 
 mkdir ../build
 mkdir ../build/staging
@@ -25,17 +27,17 @@ git fetch origin master:remotes/origin/master stable:remotes/origin/stable
 
 git checkout -f origin/master
 MASTER_REV=$(git rev-parse --short HEAD)
-rm -rf node_modules
+rm -rf node_modules package-lock.json
 npm install
 npm run build
 copy_assets ../build/staging
 
 git checkout -f origin/stable
 STABLE_REV=$(git rev-parse --short HEAD)
-rm -rf node_modules
+rm -rf node_modules package-lock.json
 npm install
 npm run build
-copy_assets ../build
+copy_assets_old ../build
 
 cd ../build
 echo "rollcall.audio" > CNAME
