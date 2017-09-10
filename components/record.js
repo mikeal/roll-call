@@ -1,20 +1,72 @@
 const ZComponent = require('./z-component')
 const waudio = require('./waudio')
 const once = require('once')
+const bel = require('bel')
 const emojione = require('emojione')
 
 const values = obj => Object.keys(obj).map(k => obj[k])
 const random = () => Math.random().toString(36).substring(7)
-
-class File extends ZComponent {
-
-}
 
 const files = {}
 const write = async (filename, chunk) => {
   if (!files[filename]) files[filename] = []
   files[filename].push(chunk)
   return true
+}
+
+class FileDownload extends ZComponent {
+  constructor () {
+    super()
+    let bytesDownloaded = bel`
+      <div class="bytesDownloaded" slot="bytesDownloaded">0</div>
+    `
+    this.appendChild(bytesDownloaded)
+  }
+  async getArrayBuffers () {
+    return files[this.filename]
+  }
+
+  set bytesDownloaded (size) {
+    let bytesDownloaded = this.querySelector('div.bytesDownloaded')
+    if (!bytesDownloaded) return
+    bytesDownloaded.textContent = `${size}%`
+  }
+  set complete (_bool) {
+    if (!_bool || _bool === 'false') return
+    this._complete = true
+    let moji = bel([emojione.toImage('⬇️')])
+    let complete = bel`<div slot="downloadComplete">${moji}</div>`
+    this.appendChild(complete)
+    this.style.cursor = 'pointer'
+    this.onclick = async () => {
+      let arrayBuffers = await this.getArrayBuffers()
+      let blob = new Blob(arrayBuffers, {type: this.contentType})
+      let url = URL.createObjectURL(blob)
+      let a = document.createElement('a')
+      a.setAttribute('href', url)
+      a.setAttribute('download', this.filename)
+      a.click()
+    }
+  }
+  get complete () {
+    return this._complete
+  }
+  get shadow () {
+    return `
+    <style>
+    :host {
+      border-radius: 5px;
+      border: 1px solid #E0E1E2;
+      display: flex;
+      border-radius: 5px;
+      border: 1px solid #E0E1E2;
+      margin: 5px 5px 5px 5px;
+    }
+    </style>
+    <slot name="bytesDownloaded"></slot>
+    <slot name="downloadComplete"></slot>
+    `
+  }
 }
 
 class Recorder extends ZComponent {
@@ -49,6 +101,7 @@ class Recorder extends ZComponent {
         // TODO: While recording end recording pulls.
         delete this.peers[key]
       })
+      node.peer.on('end', cleanup)
       node.peer.on('close', cleanup)
       node.peer.on('error', cleanup)
     }
@@ -56,15 +109,22 @@ class Recorder extends ZComponent {
   async recordPeer (rpc) {
     let filename = await rpc.record(this.recording)
     rpc._recfile = filename
-    let _filename = `${Date.now() - this.recordStart}-${filename}`
+    let _filename = `${Date.now() - this.recordStart}-${filename}.webm`
     this.files.push(_filename)
+
+    let fileElement = new FileDownload()
+    this.appendChild(fileElement)
+    fileElement.filename = _filename
+
     let chunk = true
     let length = 0
     while (chunk) {
       chunk = await rpc.read(filename)
       await write(_filename, chunk)
-      length += chunk.length
+      fileElement.bytesDownloaded = length
+      if (chunk) length += chunk.length
     }
+    fileElement.complete = true
   }
   start () {
     this.recording = random()
@@ -116,5 +176,6 @@ class Recorder extends ZComponent {
 }
 
 window.customElements.define('roll-call-recorder', Recorder)
+window.customElements.define('roll-call-recorder-file', FileDownload)
 
 module.exports = Recorder

@@ -96,6 +96,7 @@ class Peer extends ZComponent {
       this.files[filename].closed = true
       stream.emit('data', null)
     })
+    stream.on('end', cleanup)
     stream.on('close', cleanup)
     stream.on('error', cleanup)
     return filename
