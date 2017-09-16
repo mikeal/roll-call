@@ -66,7 +66,7 @@ class Call extends ZComponent {
   }
   onPeer (peer) {
     let elem = new Peer()
-    elem.attach(peer, this)
+    elem.attach(peer, this.speakers)
     this.appendChild(elem)
   }
   get shadow () {

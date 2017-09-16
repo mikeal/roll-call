@@ -13,9 +13,7 @@ class Peer extends ZComponent {
     this.files = {}
     this.recordStreams = {}
   }
-  async attach (peer, swarm) {
-    let speakers = swarm.speakers
-
+  async attach (peer, speakers) {
     this.id = `peer:${peer.publicKey}`
     peer.on('stream', async stream => {
       let audio = waudio(stream)
@@ -86,7 +84,9 @@ class Peer extends ZComponent {
     })
   }
   async record (recid) {
-    let stream = this.audio.record({video: false, audio: true})
+    let input = this.parentNode.output
+    let stream = input.record({video: false, audio: true})
+
     this.recordStreams[recid] = stream
     let filename = random()
     this.files[filename] = {stream, buffers: [], closed: false}
