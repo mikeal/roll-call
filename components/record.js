@@ -248,7 +248,7 @@ class Recorder extends ZComponent {
       display: flex;
       width: 100%;
       flex-grow: 10;
-      font-family: monospace;
+      font-family: Courier;
       margin: 5px 5px 5px 5px;
       flex-direction: row;
     }

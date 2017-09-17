@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/mikeal/roll-call#readme",
   "devDependencies": {
+    "babel-minify": "^0.2.0",
     "browserify": "^14.4.0",
     "budo": "^10.0.4",
     "standard": "^10.0.3"

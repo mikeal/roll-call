@@ -36,7 +36,7 @@ class Peer extends ZComponent {
         let ctx = cv.canvasCtx
         cv.disconnected = true
         ctx.fillStyle = 'red'
-        ctx.font = 'bold 20px monospace'
+        ctx.font = '20px Courier'
         ctx.fillText('Disconnected.', 70, 30)
         this.disconnected = true
         this.querySelector('roll-call-recorder-file').complete = true
@@ -136,7 +136,7 @@ class Peer extends ZComponent {
     }
     div.peername {
       font-size: 20px;
-      font-family: monospace;
+      font-family: Courier;
       color: #3e4347;
       padding-left: 10px;
       padding-bottom: 5px;
