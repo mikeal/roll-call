@@ -1,6 +1,6 @@
 {
   "name": "roll-call",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "",
   "main": "components/index.js",
   "scripts": {
