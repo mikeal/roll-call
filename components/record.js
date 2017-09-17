@@ -3,6 +3,13 @@ const ZComponent = require('./z-component')
 const once = require('once')
 const bel = require('bel')
 const emojione = require('emojione')
+const loadjs = require('load-js')
+
+emojione.emojiSize = 128
+
+const jszip = `
+  https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.4/jszip.min.js
+`
 
 const values = obj => Object.keys(obj).map(k => obj[k])
 const random = () => Math.random().toString(36).substring(7)
@@ -14,29 +21,54 @@ const write = async (filename, chunk) => {
   return true
 }
 
+const formatTime = ms => {
+  if (ms > 1000 * 60) {
+    ms = parseInt(ms / (1000 * 60))
+    ms += 'm'
+  } else if (ms > 1000) {
+    ms = parseInt(ms / 1000)
+    ms += 's'
+  } else {
+    ms = '0s'
+  }
+  return ms
+}
+
 class FileDownload extends ZComponent {
   constructor () {
     super()
-    let bytesDownloaded = bel`
-      <div class="bytesDownloaded" slot="bytesDownloaded">0</div>
-    `
-    this.appendChild(bytesDownloaded)
   }
   async getArrayBuffers () {
     return files[this.filename]
   }
+  set delay (ms) {
+    let node = this.shadowRoot.querySelector('div.delay')
+    node.textContent = formatTime(ms)
+  }
+  set recordTime (ms) {
+    let node = this.shadowRoot.querySelector('div.total-time')
+    node.textContent = formatTime(ms)
+  }
 
   set bytesDownloaded (size) {
-    let bytesDownloaded = this.querySelector('div.bytesDownloaded')
+    let sel = 'div.bytesDownloaded'
+    let bytesDownloaded = this.shadowRoot.querySelector(sel)
     if (!bytesDownloaded) return
-    bytesDownloaded.textContent = `${size}%`
+    if (size > (1000000)) {
+      size = (size / 1000000).toFixed(2)
+      size += 'm'
+    } if (size > 1000) {
+      size = parseInt(size / 1000)
+      size += 'k'
+    } else {
+      size += 'b'
+    }
+    bytesDownloaded.textContent = size
   }
   set complete (_bool) {
     if (!_bool || _bool === 'false') return
     this._complete = true
-    let moji = bel([emojione.toImage('⬇️')])
-    let complete = bel`<div slot="downloadComplete">${moji}</div>`
-    this.appendChild(complete)
+    this.style.color = 'blue'
     this.style.cursor = 'pointer'
     this.onclick = async () => {
       let arrayBuffers = await this.getArrayBuffers()
@@ -60,13 +92,34 @@ class FileDownload extends ZComponent {
       display: flex;
       border-radius: 5px;
       border: 1px solid #E0E1E2;
+      font-family: monospace;
+      font-size: 20px;
+      flex-direction: column;
+      padding: 5px 5px 1px 5px;
       margin: 5px 5px 5px 5px;
     }
+    div.recording-info {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+    }
+    div.disc img.emojione {
+      width: 20px;
+      height: 20px;
+    }
     </style>
-    <slot name="bytesDownloaded"></slot>
-    <slot name="downloadComplete"></slot>
+    <div class="recording-info">
+      <div class="disc">${emojione.toImage('💽')}</div>
+      <div title="record delay" class="delay"></div>
+      <div title="record time" class="total-time"></div>
+      <div title="downloaded" class="bytesDownloaded">0</div>
+    </div>
     `
   }
+}
+
+class Recording extends ZComponent {
+
 }
 
 class Recorder extends ZComponent {
@@ -106,15 +159,19 @@ class Recorder extends ZComponent {
       node.peer.on('error', cleanup)
     }
   }
-  async recordPeer (rpc) {
+  async recordPeer (rpc, peerNode) {
     let filename = await rpc.record(this.recording)
     rpc._recfile = filename
-    let _filename = `${Date.now() - this.recordStart}-${filename}.webm`
+    let delay = Date.now() - this.recordStart
+    let _filename = `${delay}-${filename}.webm`
     this.files.push(_filename)
 
     let fileElement = new FileDownload()
-    this.appendChild(fileElement)
+    fileElement.starttime = Date.now()
     fileElement.filename = _filename
+    fileElement.delay = delay
+    fileElement.setAttribute('slot', 'recording')
+    peerNode.appendChild(fileElement)
 
     let chunk = true
     let length = 0
@@ -133,14 +190,21 @@ class Recorder extends ZComponent {
 
     values(this.peers).forEach(peer => {
       // TODO: create element for recording download and pass to record peer
-      this.recordPeer(peer.rpc)
+      let node = this.recordPeer(peer.rpc, peer)
     })
 
     let me = this.parentNode.me
     let rpc = {read: f => me.read(f), record: recid => me.record(recid)}
-    this.recordPeer(rpc)
+    this.recordPeer(rpc, document.getElementById('peer:me'))
+    this.interval = setInterval(() => {
+      let elems = document.querySelectorAll('roll-call-recorder-file')
+      ;[...elems].forEach(elem => {
+        elem.recordTime = Date.now() - elem.starttime
+      })
+    }, 1000)
   }
   stop () {
+    clearInterval(this.interval)
     let recid = this.recording
     // let starttime = this.recordStart
     // let files = this.files
@@ -159,15 +223,21 @@ class Recorder extends ZComponent {
       display: flex;
       width: 100%;
       flex-grow: 10;
+      font-family: monospace;
+      margin: 5px 5px 5px 5px;
+      flex-direction: row;
     }
     div.record-button {
       cursor: pointer;
+    }
+    div.record-button img {
+      width: 40px;
     }
 
     </style>
     <div class="recording-buttons">
       <div class="record-button">
-        ${emojione.toImage('🔴')}
+        ${emojione.toImage('🎬')}
       </div>
       <slot></slot>
     </div>

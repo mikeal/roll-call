@@ -139,6 +139,9 @@ class Peer extends ZComponent {
     <div class="peername" contenteditable="true">
       <slot name="peername">Peer</slot>
     </div>
+    <div class="recording">
+      <slot name="recording"></slot>
+    </div>
    `
   }
 }

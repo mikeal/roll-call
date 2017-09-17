@@ -29,6 +29,7 @@
     "emojione": "^3.1.2",
     "getusermedia": "^2.0.1",
     "killa-beez": "^3.2.0",
+    "load-js": "^2.0.0",
     "once": "^1.4.0",
     "waudio": "^2.6.0",
     "xhr": "^2.4.0",
