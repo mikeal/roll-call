@@ -7,6 +7,8 @@ const once = require('once')
 
 const random = () => Math.random().toString(36).substring(7)
 
+let totalPeers = 0
+
 class Peer extends ZComponent {
   constructor () {
     super()
@@ -15,7 +17,7 @@ class Peer extends ZComponent {
   }
   async attach (peer, speakers) {
     this.id = `peer:${peer.publicKey}`
-    peer.on('stream', async stream => {
+    peer.once('stream', async stream => {
       let audio = waudio(stream)
       audio.connect(speakers)
 
@@ -34,6 +36,10 @@ class Peer extends ZComponent {
     peer.on('close', cleanup)
 
     this.peer = peer
+
+    let display = this.shadowRoot.querySelector('slot[name=peername]')
+    totalPeers += 1
+    display.textContent = display.textContent + ' ' + totalPeers
   }
   set audio (audio) {
     let visuals = new Visuals()
@@ -118,7 +124,7 @@ class Peer extends ZComponent {
     }
     div.peername {
       font-size: 20px;
-      font-family: Lato,'Helvetica Neue',Arial,Helvetica;
+      font-family: monospace;
       color: #3e4347;
       padding-left: 10px;
       padding-bottom: 5px;
@@ -131,7 +137,7 @@ class Peer extends ZComponent {
       <slot name="volume"></slot>
     </div>
     <div class="peername" contenteditable="true">
-      <slot name="peername">Peer Name</slot>
+      <slot name="peername">Peer</slot>
     </div>
    `
   }

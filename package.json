@@ -2,7 +2,7 @@
   "name": "roll-call",
   "version": "0.4.1",
   "description": "",
-  "main": "index.js",
+  "main": "components/index.js",
   "scripts": {
     "start": "budo index.js:bundle.js",
     "build": "browserify index.js > bundle.js",
