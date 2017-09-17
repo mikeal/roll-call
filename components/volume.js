@@ -1,10 +1,13 @@
 const ZComponent = require('./z-component')
-const emojione = require('emojione')
 const bel = require('bel')
 
-const micMoji = () => bel([emojione.toImage('🎙️')])
+const micMoji = () => bel([
+  `<img class="emojione" alt="🎙️" title=":microphone2:" src="https://cdn.jsdelivr.net/emojione/assets/3.1/png/128/1f399.png"/>`
+])
 
-const muteMoji = () => bel([emojione.toImage('🔇')])
+const muteMoji = () => bel([
+  `<img class="emojione" alt="🔇" title=":mute:" src="https://cdn.jsdelivr.net/emojione/assets/3.1/png/128/1f507.png"/>`
+])
 
 class Volume extends ZComponent {
   set audio (audio) {

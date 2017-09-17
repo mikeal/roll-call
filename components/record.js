@@ -1,10 +1,7 @@
 /* globals Blob, URL, JSZip */
 const ZComponent = require('./z-component')
 const once = require('once')
-const emojione = require('emojione')
 const loadjs = require('load-js')
-
-emojione.emojiSize = 128
 
 const jszip = `https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.4/jszip.min.js`
 
@@ -121,7 +118,10 @@ class FileDownload extends ZComponent {
     }
     </style>
     <div class="recording-info">
-      <div class="disc">${emojione.toImage('💽')}</div>
+      <div class="disc">
+        <img class="emojione" alt="💽" title=":minidisc:"
+          src="https://cdn.jsdelivr.net/emojione/assets/3.1/png/128/1f4bd.png"/>
+      </div>
       <div title="record delay" class="delay"></div>
       <div title="record time" class="total-time">0s</div>
       <div title="downloaded" class="bytesDownloaded">0b</div>
