@@ -28,7 +28,7 @@ const formatTime = ms => {
     ms = parseInt(ms / 1000)
     ms += 's'
   } else {
-    ms = '0s'
+    ms += 'ms'
   }
   return ms
 }
@@ -42,6 +42,7 @@ class FileDownload extends ZComponent {
     node.textContent = formatTime(ms)
   }
   set recordTime (ms) {
+    if (ms < 1000) return
     let node = this.shadowRoot.querySelector('div.total-time')
     node.textContent = formatTime(ms)
   }
@@ -107,8 +108,8 @@ class FileDownload extends ZComponent {
     <div class="recording-info">
       <div class="disc">${emojione.toImage('💽')}</div>
       <div title="record delay" class="delay"></div>
-      <div title="record time" class="total-time"></div>
-      <div title="downloaded" class="bytesDownloaded">0</div>
+      <div title="record time" class="total-time">0s</div>
+      <div title="downloaded" class="bytesDownloaded">0b</div>
     </div>
     `
   }
@@ -132,10 +133,10 @@ class Recorder extends ZComponent {
     let button = this.shadowRoot.querySelector('div.record-button')
     button.onclick = () => {
       this.start()
-      button.innerHTML = emojione.toImage('⏹️')
+      button.textContent = 'Stop Recording'
       button.onclick = () => {
         this.stop()
-        button.parentNode.removeChild(button)
+        button.textContent = 'Downloading...'
       }
     }
   }
@@ -143,11 +144,13 @@ class Recorder extends ZComponent {
     if (node.peer) {
       let key = node.peer.publicKey
       node.onRPC = rpc => {
-        // TODO: Start recording if we are in a recording state.
         this.peers[key] = node
+        if (this.recording) {
+          this.recordPeer(rpc, node)
+        }
       }
       let cleanup = once(() => {
-        // TODO: While recording end recording pulls.
+        // if (this.recording) return
         delete this.peers[key]
       })
       node.peer.on('end', cleanup)
@@ -158,6 +161,7 @@ class Recorder extends ZComponent {
   async recordPeer (rpc, peerNode) {
     let filename = await rpc.record(this.recording)
     rpc._recfile = filename
+    // TODO: ping/pong to remove half of RTT from delay.
     let delay = Date.now() - this.recordStart
     let _filename = `${delay}-${filename}.webm`
     this.files.push(_filename)
@@ -168,16 +172,19 @@ class Recorder extends ZComponent {
     fileElement.delay = delay
     fileElement.setAttribute('slot', 'recording')
     peerNode.appendChild(fileElement)
+    peerNode.recording = this.recording
 
     let chunk = true
     let length = 0
     while (chunk) {
       chunk = await rpc.read(filename)
+      fileElement.recordTime = Date.now() - fileElement.starttime
       await write(_filename, chunk)
       fileElement.bytesDownloaded = length
       if (chunk) length += chunk.length
     }
     fileElement.complete = true
+
   }
   start () {
     this.recording = random()
@@ -192,14 +199,8 @@ class Recorder extends ZComponent {
     let me = this.parentNode.me
     let rpc = {read: f => me.read(f), record: recid => me.record(recid)}
     this.recordPeer(rpc, document.getElementById('peer:me'))
-    this.interval = setInterval(() => {
-      let elems = document.querySelectorAll('roll-call-recorder-file')
-      ;[...elems].forEach(elem => {
-        elem.recordTime = Date.now() - elem.starttime
-      })
-    }, 1000)
   }
-  stop () {
+  async stop () {
     clearInterval(this.interval)
     let recid = this.recording
     // let starttime = this.recordStart
@@ -207,10 +208,16 @@ class Recorder extends ZComponent {
     delete this.recording
     delete this.recordStart
     delete this.files
-    values(this.peers).forEach(async peer => {
-      if (peer.rpc._recfile) await peer.rpc.stop(recid)
-    })
+    let promises = values(this.peers)
+      .filter(p => p.rpc._recfile)
+      .map(p => p.rpc.stop(recid))
+    await Promise.all(promises)
     this.parentNode.me.stop(recid)
+    this.onEnd(recid)
+  }
+  onEnd (recid) {
+    let button = this.shadowRoot.querySelector('div.record-button')
+    button.innerHTML = ''
   }
   get shadow () {
     return `
@@ -225,15 +232,14 @@ class Recorder extends ZComponent {
     }
     div.record-button {
       cursor: pointer;
+      color: blue;
+      font-size: 20px;
+      margin-left: 1px;
     }
-    div.record-button img {
-      width: 40px;
-    }
-
     </style>
     <div class="recording-buttons">
       <div class="record-button">
-        ${emojione.toImage('🎬')}
+        Start Recording
       </div>
       <slot></slot>
     </div>

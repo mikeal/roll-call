@@ -18,6 +18,7 @@ const startLoop = () => {
     elements.forEach(drawPerson)
 
     function drawPerson (canvas) {
+      if (canvas.disconnected) return
       let WIDTH = canvas.width
       let HEIGHT = canvas.height
       let canvasCtx = canvas.canvasCtx
