@@ -1,14 +1,29 @@
-/* globals Blob, URL */
+/* globals Blob, URL, JSZip */
 const ZComponent = require('./z-component')
 const once = require('once')
 const emojione = require('emojione')
-// const loadjs = require('load-js')
+const loadjs = require('load-js')
 
 emojione.emojiSize = 128
 
-// const jszip = `
-//   https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.4/jszip.min.js
-// `
+const jszip = `https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.4/jszip.min.js`
+
+const zip = async (id) => {
+  await loadjs([{async: true, url: jszip}])
+  var zip = new JSZip()
+
+  // Generate a directory within the Zip file structure
+  var folder = zip.folder(`rollcall-${id}`)
+
+  // Add a file to the directory, in this case an image with data URI as contents
+  let sel = 'roll-call-recorder-file'
+  for (let n of document.querySelectorAll(sel)) {
+    let arrayBuffers = await n.getArrayBuffers()
+    let blob = new Blob(arrayBuffers, {type: n.contentType})
+    folder.file(n.filename, blob)
+  }
+  return zip.generateAsync({type: 'blob'})
+}
 
 const values = obj => Object.keys(obj).map(k => obj[k])
 const random = () => Math.random().toString(36).substring(7)
@@ -184,7 +199,6 @@ class Recorder extends ZComponent {
       if (chunk) length += chunk.length
     }
     fileElement.complete = true
-
   }
   start () {
     this.recording = random()
@@ -217,7 +231,15 @@ class Recorder extends ZComponent {
   }
   onEnd (recid) {
     let button = this.shadowRoot.querySelector('div.record-button')
-    button.innerHTML = ''
+    button.textContent = 'Download Zip'
+    button.onclick = async () => {
+      let blob = await zip(recid)
+      let url = URL.createObjectURL(blob)
+      let a = document.createElement('a')
+      a.setAttribute('href', url)
+      a.setAttribute('download', `rollcall-${recid}.zip`)
+      a.click()
+    }
   }
   get shadow () {
     return `

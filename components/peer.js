@@ -6,7 +6,6 @@ const znode = require('znode')
 const once = require('once')
 
 const random = () => Math.random().toString(36).substring(7)
-const values = obj => Object.keys(obj).map(k => obj[k])
 
 let totalPeers = 0
 
@@ -41,7 +40,6 @@ class Peer extends ZComponent {
         ctx.fillText('Disconnected.', 70, 30)
         this.disconnected = true
         this.querySelector('roll-call-recorder-file').complete = true
-        return
       } else {
         this.parentNode.removeChild(this)
       }
