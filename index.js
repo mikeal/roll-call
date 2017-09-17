@@ -7,7 +7,6 @@ const getChromeVersion = () => {
   return raw ? parseInt(raw[2], 10) : false
 }
 
-const emojione = require('emojione')
 const random = () => Math.random().toString(36).substring(7)
 
 const welcome =
@@ -73,4 +72,3 @@ if (window.location.search && getChromeVersion()) {
     }
   })
 }
-

@@ -1,15 +1,14 @@
 /* globals Blob, URL */
 const ZComponent = require('./z-component')
 const once = require('once')
-const bel = require('bel')
 const emojione = require('emojione')
-const loadjs = require('load-js')
+// const loadjs = require('load-js')
 
 emojione.emojiSize = 128
 
-const jszip = `
-  https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.4/jszip.min.js
-`
+// const jszip = `
+//   https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.4/jszip.min.js
+// `
 
 const values = obj => Object.keys(obj).map(k => obj[k])
 const random = () => Math.random().toString(36).substring(7)
@@ -35,9 +34,6 @@ const formatTime = ms => {
 }
 
 class FileDownload extends ZComponent {
-  constructor () {
-    super()
-  }
   async getArrayBuffers () {
     return files[this.filename]
   }
@@ -118,9 +114,9 @@ class FileDownload extends ZComponent {
   }
 }
 
-class Recording extends ZComponent {
+// class Recording extends ZComponent {
 
-}
+// }
 
 class Recorder extends ZComponent {
   constructor () {
@@ -190,7 +186,7 @@ class Recorder extends ZComponent {
 
     values(this.peers).forEach(peer => {
       // TODO: create element for recording download and pass to record peer
-      let node = this.recordPeer(peer.rpc, peer)
+      this.recordPeer(peer.rpc, peer)
     })
 
     let me = this.parentNode.me
