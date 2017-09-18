@@ -25,10 +25,14 @@
       faq-container {
         max-width: 600px;
       }
-      span#start-call, span#start-party, a.patreon {
+      span#start-call, span#start-party, a,
+      span#start-call-link {
         color: blue;
         cursor: pointer;
         text-decoration: none;
+      }
+      img {
+        max-width: 100%;
       }
       </style>
       <welcome-message>
@@ -42,7 +46,29 @@
             This page answers common questions and explains how
             to use all the "hidden" features in Roll Call.
           </p>
-          <h4>What does "podcast quality recording" mean?</h4>
+          <ul>
+            <li><a href="#start-call">Basic calling.</a></li>
+            <li><a href="#podcast-quality">What does "podcast quality recording" mean?</a></li>
+          </ul>
+          <h4 id="podcast-quality">Basic calling.</h4>
+          <p>You can click the start link on the <a href="/">front page</a>, or just click
+            <span id="start-call-link">this</span> to start a new call.
+          </p>
+          <script>
+            const random = () => Math.random().toString(36).substring(7)
+            document.getElementById('start-call-link').onclick = () => {
+              window.location = '/?room=' + random()
+            }
+          </script>
+          <img src="https://file-tdrdlohaza.now.sh"></img>
+          <p>
+            You can invite other people to the call simply by sharing
+            the <strong>URL</strong> with anyone you'd like to have join. You can also modify the URL's <em>room</em> paramater to create something more permanent
+            that you and your friend can continue to return to.
+          </p>
+
+
+          <h4 id="podcast-quality">What does "podcast quality recording" mean?</h4>
           <p>
             You're probably used to hearing short delays
             and clipping as the audio adjusts to bandwidth conditions
