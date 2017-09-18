@@ -17,7 +17,7 @@ if [ "$TRAVIS_BRANCH" != "master" -a "$TRAVIS_BRANCH" != "stable" ]; then
 fi
 
 copy_assets_old () { cp -r vendor favicon.png index.html bundle.js worker.js $1; }
-copy_assets () { cp -r favicon.png index.html bundle.js worker.js $1; }
+copy_assets () { cp -r favicon.png index.html bundle.js worker.js faq.html $1; }
 
 
 mkdir ../build
