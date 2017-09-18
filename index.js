@@ -50,12 +50,16 @@ const onlyChrome = `
   <span class="onlychrome">Roll Call only works in latest Chrome :(</span>
 `
 
+const help = `
+  <a class="help" target="_blank" href="/faq.html">help -></a>
+`
+
 if (window.location.search && getChromeVersion()) {
   let url = new URL(window.location)
-  let room = url.searchParams.get('room') || 'promise-test'
+  let room = url.searchParams.get('room')
   if (room) {
     require('./components')
-    container.innerHTML = `<roll-call z-call="${room}"></roll-call>`
+    container.innerHTML = `${help}<roll-call z-call="${room}"></roll-call>`
   }
 } else {
   container.innerHTML = welcome
