@@ -4,8 +4,7 @@ const Visuals = require('./visuals')
 const Volume = require('./volume')
 const znode = require('znode')
 const once = require('once')
-
-const random = () => Math.random().toString(36).substring(7)
+const { Uploader } = require('./files')
 
 let totalPeers = 0
 
@@ -80,10 +79,29 @@ class Peer extends ZComponent {
   get api () {
     return {
       setName: name => this.setName(name),
-      record: recid => this.record(recid),
-      stop: recid => this.stop(recid),
-      read: filename => this.read(filename)
+      record: recid => this.remoteRecord(recid),
+      stop: recid => this.remoteStop(recid),
+      read: filename => this.remoteRead(filename)
     }
+  }
+  async remoteRead (filename) {
+    let sel = `roll-call-uploader[z-filename="${filename}"]`
+    let uploader = this.querySelector(sel)
+    let chunk = await this.read(filename)
+    uploader.progress(chunk)
+    return chunk
+  }
+  remoteRecord (recid) {
+    let uploader = new Uploader()
+    uploader.contentType = 'audio/webm'
+    uploader.setAttribute('z-filename', recid)
+    uploader.setAttribute('slot', 'recording')
+    uploader.action = '<span style="color:red">Recording</span>'
+    this.appendChild(uploader)
+    return this.record(recid)
+  }
+  remoteStop (recid) {
+    return this.stop(recid)
   }
   async read (filename) {
     if (!this.files[filename]) throw new Error('No such file.')
@@ -106,7 +124,7 @@ class Peer extends ZComponent {
     let stream = input.record({video: false, audio: true})
 
     this.recordStreams[recid] = stream
-    let filename = random()
+    let filename = recid
     this.files[filename] = {stream, buffers: [], closed: false}
     stream.on('data', chunk => this.files[filename].buffers.push(chunk))
     let cleanup = once(() => {
