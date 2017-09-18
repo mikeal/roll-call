@@ -13,7 +13,7 @@ const welcome =
   `
   <style>
   welcome-message {
-    font-family: monospace;
+    font-family: Courier;
     font-size: 45px;
     display: flex;
     justify-content: center;

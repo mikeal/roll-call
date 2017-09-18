@@ -101,7 +101,7 @@ class FileDownload extends ZComponent {
       display: flex;
       border-radius: 5px;
       border: 1px solid #E0E1E2;
-      font-family: monospace;
+      font-family: Courier;
       font-size: 20px;
       flex-direction: column;
       padding: 5px 5px 1px 5px;
