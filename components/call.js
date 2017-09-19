@@ -1,4 +1,5 @@
 const bel = require('bel')
+const dragDrop = require('drag-drop')
 const waudio = require('./waudio')
 const createSwarm = require('killa-beez')
 const ZComponent = require('./z-component')
@@ -19,6 +20,10 @@ class Call extends ZComponent {
   constructor () {
     super()
     this.roomHost = 'https://roomexchange.now.sh'
+    this.serving = []
+    dragDrop(this, files => {
+      this.serveFiles(files)
+    })
   }
   set call (val) {
     this.start(val)
@@ -67,7 +72,14 @@ class Call extends ZComponent {
   onPeer (peer) {
     let elem = new Peer()
     elem.attach(peer, this.speakers)
+    // TODO: serve files.
     this.appendChild(elem)
+  }
+  serveFiles (files) {
+    this.serving = this.serving.concat([...files])
+    ;[...this.querySelectorAll('roll-call-peer')].forEach(peer => {
+      peer.serveFiles(files)
+    })
   }
   get shadow () {
     return `

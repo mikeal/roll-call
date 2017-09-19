@@ -1,6 +1,7 @@
 /* globals URL */
 
 const container = document.body
+const dragDrop = require('drag-drop')
 
 const getChromeVersion = () => {
   var raw = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)
@@ -60,6 +61,9 @@ if (window.location.search && getChromeVersion()) {
   if (room) {
     require('./components')
     container.innerHTML = `${help}<roll-call z-call="${room}"></roll-call>`
+    dragDrop('body', files => {
+      document.querySelector('roll-call').serveFiles(files)
+    })
   }
 } else {
   container.innerHTML = welcome

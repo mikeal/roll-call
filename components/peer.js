@@ -4,9 +4,29 @@ const Visuals = require('./visuals')
 const Volume = require('./volume')
 const znode = require('znode')
 const once = require('once')
-const { Uploader } = require('./files')
+const dragDrop = require('drag-drop')
+const toBuffer = require('typedarray-to-buffer')
+const { Uploader, Downloader } = require('./files')
 
 let totalPeers = 0
+
+const spliceBlob = blob => {
+  let promises = []
+  let i = 0
+  let csize = 50 * 1000  // chunk size
+  while (i < blob.size) {
+    ;((_blob) => {
+      promises.push(new Promise((resolve, reject) => {
+        let reader = new FileReader()
+        reader.onload = () => resolve(toBuffer(reader.result))
+        reader.readAsArrayBuffer(_blob)
+      }))
+    })(blob.slice(i, i + csize))
+    i += csize
+  }
+  promises.push(null)
+  return promises
+}
 
 class Peer extends ZComponent {
   constructor () {
@@ -29,17 +49,23 @@ class Peer extends ZComponent {
     })
 
     let cleanup = once(() => {
+      let cv = this.querySelector('canvas.roll-call-visuals')
+      let ctx = cv.canvasCtx
+      cv.disconnected = true
+      ctx.fillStyle = 'red'
+      ctx.font = '20px Courier'
+      ctx.fillText('Disconnected.', 70, 30)
+      this.disconnected = true
+
+      let blockRemoval
+      ;[...this.childNodes].forEach(node => {
+        if (node.blockRemoval) blockRemoval = true
+      })
+
       if (this.recording) {
         // TODO: Add disconnected info.
-        let cv = this.querySelector('canvas.roll-call-visuals')
-        let ctx = cv.canvasCtx
-        cv.disconnected = true
-        ctx.fillStyle = 'red'
-        ctx.font = '20px Courier'
-        ctx.fillText('Disconnected.', 70, 30)
-        this.disconnected = true
         this.querySelector('roll-call-recorder-file').complete = true
-      } else {
+      } else if (!blockRemoval) {
         this.parentNode.removeChild(this)
       }
     })
@@ -72,6 +98,10 @@ class Peer extends ZComponent {
     if (this._rpc) return
     this._rpc = val
     this.onRPC(val)
+
+    dragDrop(this, files => {
+      this.serveFiles(files)
+    })
   }
   get rpc () {
     return this._rpc
@@ -81,21 +111,55 @@ class Peer extends ZComponent {
       setName: name => this.setName(name),
       record: recid => this.remoteRecord(recid),
       stop: recid => this.remoteStop(recid),
-      read: filename => this.remoteRead(filename)
+      read: filename => this.remoteRead(filename),
+      offerFile: obj => this.onFileOffer(obj)
     }
+  }
+  serveFiles (files) {
+    if (!this.rpc) return // this is the me element
+    files.forEach(async f => {
+      let filename = f.name
+      let buffers = await spliceBlob(f)
+      this.files[filename] = {buffers, closed: false}
+      this.rpc.offerFile({filename, size: f.size, type: f.type})
+
+      let uploader = new Uploader()
+      uploader.filename = filename
+      uploader.setAttribute('z-filename', filename)
+      uploader.setAttribute('slot', 'recording')
+      uploader.size = f.size
+      uploader.fileSize = f.size
+      uploader.contentType = f.type
+      uploader.action = '<span>File Offered</span>'
+      this.appendChild(uploader)
+    })
+  }
+  onFileOffer (obj) {
+    let downloader = new Downloader()
+    downloader.filename = obj.filename
+    downloader.setAttribute('z-filename', obj.filename)
+    downloader.setAttribute('slot', 'recording')
+
+    downloader.contentType = obj.type
+    downloader.size = obj.size
+    downloader.rpc = this.rpc
+
+    this.appendChild(downloader)
   }
   async remoteRead (filename) {
     let sel = `roll-call-uploader[z-filename="${filename}"]`
-    let uploader = this.querySelector(sel)
     let chunk = await this.read(filename)
+    let uploader = this.querySelector(sel)
+    uploader.uploading = true
     uploader.progress(chunk)
     return chunk
   }
   remoteRecord (recid) {
     let uploader = new Uploader()
-    uploader.contentType = 'audio/webm'
     uploader.setAttribute('z-filename', recid)
     uploader.setAttribute('slot', 'recording')
+
+    uploader.contentType = 'audio/webm'
     uploader.action = '<span style="color:red">Recording</span>'
     this.appendChild(uploader)
     return this.record(recid)
