@@ -1,6 +1,6 @@
 # Roll Call
 
-![demo gif](https://cdn-images-1.medium.com/max/600/1*PPYEQEBH_KFuifS0EEdazg.gif)
+![demo gif](https://file-qtyhhlspct.now.sh)
 
 On the surface, **Roll Call is quite simple**. Free calls for everyone in the world.
 
