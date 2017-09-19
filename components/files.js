@@ -1,3 +1,4 @@
+/* globals URL, Blob */
 const ZComponent = require('./z-component')
 const bel = require('bel')
 
@@ -148,7 +149,7 @@ class Downloader extends FileShare {
       let chunk = true
       let i = 0
       while (chunk) {
-        chunk = await rpc.read(this.filename)
+        chunk = await rpc.read(this.filename, i)
         if (chunk && chunk.length) {
           this.write(chunk)
           i += chunk.length

@@ -1,3 +1,4 @@
+/* globals FileReader */
 const waudio = require('./waudio')
 const ZComponent = require('./z-component')
 const Visuals = require('./visuals')
