@@ -3,8 +3,14 @@ const ZComponent = require('./z-component')
 const bel = require('bel')
 
 const iconMap = {
-  'audio': `<img slot="icon" class="emojione" alt="🎧" title=":minidisc:"
-  src="https://cdn.jsdelivr.net/emojione/assets/3.1/png/128/1f3a7.png"/>`
+  'audio': `<img slot="icon" class="emojione" alt="🎧"
+  src="https://cdn.jsdelivr.net/emojione/assets/3.1/png/128/1f3a7.png"/>`,
+  'image': `<img slot="icon" class="emojione" alt="🖼️"
+  src="https://cdn.jsdelivr.net/emojione/assets/3.1/png/128/1f5bc.png"/>`,
+  'video': `<img slot="icon" class="emojione" alt="📹"
+  src="https://cdn.jsdelivr.net/emojione/assets/3.1/png/128/1f4f9.png"/>`,
+  'text': `<img slot="icon" class="emojione" alt="📃"
+  src="https://cdn.jsdelivr.net/emojione/assets/3.1/png/128/1f4c3.png"/>`
 }
 
 class FileShare extends ZComponent {
