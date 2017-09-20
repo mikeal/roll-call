@@ -60,7 +60,7 @@ if (window.location.search && getChromeVersion()) {
   let room = url.searchParams.get('room')
   if (room) {
     require('./components')
-    container.innerHTML = `${help}<roll-call z-call="${room}"></roll-call>`
+    container.innerHTML = `${help}<roll-call call="${room}"></roll-call>`
     dragDrop('body', files => {
       document.querySelector('roll-call').serveFiles(files)
     })

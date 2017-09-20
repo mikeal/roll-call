@@ -36,17 +36,20 @@ class ZComponent extends HTMLElement {
       let shadowRoot = this.attachShadow({mode: 'open'})
       shadowRoot.innerHTML = shadow
     }
+    let proto = Object.getPrototypeOf(this)
+    let descs = Object.getOwnPropertyDescriptors(proto)
+    let _keys = Object.keys(descs).filter(k => descs[k].set)
     observer(this, attributes => {
       for (let key in attributes) {
-        if (key.startsWith('z-')) {
-          this[key.slice('z-'.length)] = attributes[key]
+        if (_keys.indexOf(key) !== -1) {
+          this[key] = attributes[key]
         }
       }
     })
     ;[...this.attributes].forEach(node => {
       let key = node.name
-      if (key.startsWith('z-')) {
-        this[key.slice('z-'.length)] = node.nodeValue
+      if (_keys.indexOf(key) !== -1) {
+        this[key] = node.nodeValue
       }
     })
   }

@@ -125,8 +125,7 @@ class Peer extends ZComponent {
       this.rpc.offerFile({filename, size: f.size, type: f.type})
 
       let uploader = new Uploader()
-      uploader.filename = filename
-      uploader.setAttribute('z-filename', filename)
+      uploader.setAttribute('filename', filename)
       uploader.setAttribute('slot', 'recording')
       uploader.size = f.size
       uploader.fileSize = f.size
@@ -138,7 +137,7 @@ class Peer extends ZComponent {
   onFileOffer (obj) {
     let downloader = new Downloader()
     downloader.filename = obj.filename
-    downloader.setAttribute('z-filename', obj.filename)
+    downloader.setAttribute('filename', obj.filename)
     downloader.setAttribute('slot', 'recording')
 
     downloader.contentType = obj.type
@@ -148,7 +147,7 @@ class Peer extends ZComponent {
     this.appendChild(downloader)
   }
   async remoteRead (filename) {
-    let sel = `roll-call-uploader[z-filename="${filename}"]`
+    let sel = `roll-call-uploader[filename="${filename}"]`
     let chunk = await this.read(filename)
     let uploader = this.querySelector(sel)
     uploader.uploading = true
@@ -157,7 +156,7 @@ class Peer extends ZComponent {
   }
   remoteRecord (recid) {
     let uploader = new Uploader()
-    uploader.setAttribute('z-filename', recid)
+    uploader.setAttribute('filename', recid)
     uploader.setAttribute('slot', 'recording')
 
     uploader.contentType = 'audio/webm'
