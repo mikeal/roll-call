@@ -1,5 +1,6 @@
 const bel = require('bel')
 const dragDrop = require('drag-drop')
+const getUserMedia = require('get-user-media-promise')
 const waudio = require('./waudio')
 const createSwarm = require('killa-beez')
 const ZComponent = require('./z-component')
@@ -45,7 +46,7 @@ class Call extends ZComponent {
       video: false
     }
     let [media, config] = await Promise.all([
-      await navigator.mediaDevices.getUserMedia(mediaopts),
+      await getUserMedia(mediaopts),
       await getConfig()
     ])
 

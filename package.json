@@ -33,6 +33,7 @@
   "dependencies": {
     "bel": "^5.1.2",
     "drag-drop": "^2.13.2",
+    "get-user-media-promise": "^1.1.1",
     "getusermedia": "^2.0.1",
     "killa-beez": "^3.3.0",
     "load-js": "^2.0.0",
