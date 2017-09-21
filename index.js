@@ -8,6 +8,8 @@ const getChromeVersion = () => {
   return raw ? parseInt(raw[2], 10) : false
 }
 
+const each = (arr, fn) => Array.from(arr).forEach(fn)
+
 const random = () => Math.random().toString(36).substring(7)
 
 const welcome =
@@ -70,7 +72,7 @@ if (window.location.search && getChromeVersion()) {
   if (!getChromeVersion()) {
     document.querySelector('span.start-text').innerHTML = onlyChrome
   }
-  ;[...document.querySelectorAll('welcome-message span')].forEach(elem => {
+  each(document.querySelectorAll('welcome-message span'), elem => {
     elem.onclick = () => {
       let room
       if (elem.id === 'start-party') room = 'party'

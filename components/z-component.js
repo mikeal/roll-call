@@ -1,8 +1,13 @@
+const each = (arr, fn) => {
+  return Array.from(arr).forEach(fn)
+}
+
 /* globals MutationObserver,HTMLElement */
 const observer = (element, onAttributes) => {
   var observer = new MutationObserver(mutations => {
+    mutations = Array.from(mutations)
     let attributes = Object.assign({},
-      ...mutations
+      mutations
       .filter(m => m.type === 'attributes')
       .map(m => m.attributeName)
       .map(attr => {
@@ -16,10 +21,10 @@ const observer = (element, onAttributes) => {
     mutations.filter(m => m.type === 'childList')
     .forEach(m => {
       if (m.addedNodes && element.onAddedNode) {
-        [...m.addedNodes].forEach(n => element.onAddedNode(n))
+        each(m.addedNodes, n => element.onAddedNode(n))
       }
       if (m.removedNodes && element.onRemovedNode) {
-        [...m.removedNodes].forEach(n => element.onRemovedNode(n))
+        each(m.removedNodes, n => element.onRemovedNode(n))
       }
     })
   })
@@ -46,7 +51,7 @@ class ZComponent extends HTMLElement {
         }
       }
     })
-    ;[...this.attributes].forEach(node => {
+    each(this.attributes, node => {
       let key = node.name
       if (_keys.indexOf(key) !== -1) {
         this[key] = node.nodeValue

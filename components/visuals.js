@@ -1,6 +1,10 @@
 /* global requestAnimationFrame */
 const ZComponent = require('./z-component')
 
+const each = (arr, fn) => {
+  return Array.from(arr).forEach(fn)
+}
+
 let looping
 
 const startLoop = () => {
@@ -14,8 +18,7 @@ const startLoop = () => {
     let now = Date.now()
     if (now - lastTime < 50) return
 
-    let elements = [...document.querySelectorAll(selector)]
-    elements.forEach(drawPerson)
+    each(document.querySelectorAll(selector), drawPerson)
 
     function drawPerson (canvas) {
       if (canvas.disconnected) return

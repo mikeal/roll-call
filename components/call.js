@@ -16,6 +16,10 @@ const getConfig = () => {
   })
 }
 
+const each = (arr, fn) => {
+  return Array.from(arr).forEach(fn)
+}
+
 class Call extends ZComponent {
   constructor () {
     super()
@@ -76,8 +80,8 @@ class Call extends ZComponent {
     this.appendChild(elem)
   }
   serveFiles (files) {
-    this.serving = this.serving.concat([...files])
-    ;[...this.querySelectorAll('roll-call-peer')].forEach(peer => {
+    this.serving = this.serving.concat(Array.from(files))
+    each(this.querySelectorAll('roll-call-peer'), peer => {
       peer.serveFiles(files)
     })
   }
