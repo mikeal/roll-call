@@ -1,5 +1,5 @@
 /* global requestAnimationFrame */
-const ZComponent = require('./z-component')
+const ZComponent = require('zcomponent')
 
 const each = (arr, fn) => {
   return Array.from(arr).forEach(fn)

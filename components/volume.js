@@ -1,4 +1,4 @@
-const ZComponent = require('./z-component')
+const ZComponent = require('zcomponent')
 const bel = require('bel')
 
 const micMoji = () => bel([

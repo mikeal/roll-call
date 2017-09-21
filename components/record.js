@@ -1,5 +1,5 @@
 /* globals Blob, URL, JSZip */
-const ZComponent = require('./z-component')
+const ZComponent = require('zcomponent')
 const once = require('once')
 const waudio = require('./waudio')
 const loadjs = require('load-js')
