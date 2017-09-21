@@ -5,6 +5,7 @@ const each = (arr, fn) => {
 /* globals MutationObserver,HTMLElement */
 const observer = (element, onAttributes) => {
   var observer = new MutationObserver(mutations => {
+    console.error('mutations', mutations)
     mutations = Array.from(mutations)
     let attributes = Object.assign({},
       mutations
@@ -51,12 +52,26 @@ class ZComponent extends HTMLElement {
         }
       }
     })
+    let constructedKeys = []
     each(this.attributes, node => {
       let key = node.name
       if (_keys.indexOf(key) !== -1) {
         this[key] = node.nodeValue
       }
+      constructedKeys.push(key)
     })
+    // Safari Hack
+    // For some reason mutation observer doesn't pick up
+    // initial attributes but those are also not on the element.
+    setTimeout(() => {
+      each(this.attributes, node => {
+        let key = node.name
+        if (constructedKeys.includes(key)) return
+        if (_keys.indexOf(key) !== -1) {
+          this[key] = node.nodeValue
+        }
+      })
+    }, 0)
   }
   set shadow (shadow) {
     this.shadowRoot.innerHTML = shadow
