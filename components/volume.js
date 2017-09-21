@@ -33,6 +33,11 @@ class Volume extends ZComponent {
     muteButton.appendChild(micMoji())
 
     /* Wire up Volume Slider  */
+    const slider = elem.querySelector(`input[type="range"]`)
+    slider.oninput = () => {
+      let volume = parseFloat(slider.value)
+      audio.volume(volume)
+    }
   }
   get shadow () {
     return `
