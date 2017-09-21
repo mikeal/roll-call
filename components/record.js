@@ -1,6 +1,7 @@
 /* globals Blob, URL, JSZip */
 const ZComponent = require('./z-component')
 const once = require('once')
+const waudio = require('./waudio')
 const loadjs = require('load-js')
 
 const jszip = `https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.4/jszip.min.js`
@@ -19,6 +20,9 @@ const zip = async (id) => {
     let blob = new Blob(arrayBuffers, {type: n.contentType})
     folder.file(n.filename, blob)
   }
+  let opts = {type: 'audio/webm'}
+  let blob = new Blob(files[`${id}-monitor.webm`], opts)
+  folder.file(`${id}-monitor.webm`, blob)
   return zip.generateAsync({type: 'blob'})
 }
 
@@ -213,8 +217,18 @@ class Recorder extends ZComponent {
     let me = this.parentNode.me
     let rpc = {read: f => me.read(f), record: recid => me.record(recid)}
     this.recordPeer(rpc, document.getElementById('peer:me'))
+
+    let f = this.recording + '-monitor.webm'
+    this.files.push(f)
+    let audio = waudio()
+    files[f] = []
+    me.parentNode.speakers.connect(audio)
+    me.audio.connect(audio)
+    this.monitor = audio.record({video: false, audio: true})
+    this.monitor.on('data', chunk => files[f].push(chunk))
   }
   async stop () {
+    this.monitor.stop()
     clearInterval(this.interval)
     let recid = this.recording
     // let starttime = this.recordStart
