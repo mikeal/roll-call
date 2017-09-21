@@ -6,7 +6,11 @@
   "scripts": {
     "start": "budo index.js:bundle.js",
     "build": "browserify index.js > bundle.js",
-    "test": "standard"
+    "commit": "git-cz",
+    "test": "standard",
+    "precommit": "npm test",
+    "prepush": "npm test",
+    "commitmsg": "validate-commit-msg"
   },
   "repository": {
     "type": "git",
@@ -23,10 +27,11 @@
     "babel-minify": "^0.2.0",
     "browserify": "^14.4.0",
     "budo": "^10.0.4",
+    "husky": "^0.14.3",
     "standard": "^10.0.3"
   },
   "dependencies": {
-    "bel": "^5.1.0",
+    "bel": "^5.1.2",
     "drag-drop": "^2.13.2",
     "getusermedia": "^2.0.1",
     "killa-beez": "^3.3.0",

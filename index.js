@@ -9,8 +9,8 @@ if (!window.AudioContext && window.webkitAudioContext) {
 
 const getChromeVersion = () => {
   return true
-  var raw = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)
-  return raw ? parseInt(raw[2], 10) : false
+  // var raw = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)
+  // return raw ? parseInt(raw[2], 10) : false
 }
 
 const each = (arr, fn) => Array.from(arr).forEach(fn)
