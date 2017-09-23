@@ -15,5 +15,5 @@ script:
   - npm run test
   - npm run build
 after_success:
-  - ./scripts/deploy.sh
   - npm run semantic-release
+  - ./scripts/deploy.sh
