@@ -46,8 +46,8 @@ class Call extends ZComponent {
       video: false
     }
     let [media, config] = await Promise.all([
-      await getUserMedia(mediaopts),
-      await getConfig()
+      getUserMedia(mediaopts),
+      getConfig()
     ])
 
     let output = waudio(media)

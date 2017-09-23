@@ -1,21 +1,35 @@
 # Roll Call
 
-![demo gif](https://file-vpbygpmpka.now.sh)
-
-On the surface, **Roll Call is quite simple**. Free calls for everyone in the world.
-
-Try it now at: [rollcall.audio](https://rollcall.audio)
-
----
-
 Roll Call is a completely free🎉 voice chat service with podcast
 quality recording.
 
-It's entirely Open Source and can be embedded into your own web pages
-and web applications.
+Go ahead and use it: [rollcall.audio](https://rollcall.audio)
+
+![demo gif](https://file-vpbygpmpka.now.sh)
+
+Features Include:
+
+* Multi-party realtime audio calls.
+* Drag & Drop File Sharing.
+* Podcast quality recording.
+  * We record each participant locally and send you the audio via the
+    data channel instead of recording the compressed and often low quality
+    realtime audio.
 
 For more information on how to use Roll Call check out the
 [FAQ](https://rollcall.audio/faq.html).
+
+Roll Call is entirely Open Source and can be embedded into your own web pages
+and web applications.
+
+## Chrome/Brave Only
+
+**Roll Call only works in last few releases of
+Chrome & Brave**. This is not due to lack of testing or development work but
+because of bugs in Safari and Firefox. Roll Call sits at the intersection of
+browser audio and WebRTC support, it's a minefield for finding bugs burried
+deep in browser implementations. Even supporting Chrome takes [some hacks](https://github.com/mikeal/waudio/blob/master/index.js#L9).
+
 
 ## Embedding
 
