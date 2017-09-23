@@ -6,9 +6,8 @@ before_script:
 branches:
   except:
     - /^v\d+\.\d+\.\d+$/
-language: node_js
 node_js:
-  - "8"
+  - '8'
 cache:
   directories:
     - node_modules
