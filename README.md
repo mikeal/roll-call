@@ -8,30 +8,50 @@ Try it now at: [rollcall.audio](https://rollcall.audio)
 
 ---
 
-With modern web technologies we should be able to make free audio calls to everyone in the world.
-Since this technology is peer-to-peer, there should be little to no infrastructure cost.
-That’s how it *should be*.
+Roll Call is a completely free🎉 voice chat service with podcast
+quality recording.
 
-In reality, there isn’t a reliable project that accomplishes this. This problem also gets more complicated as we add some important additional requirements.
+It's entirely Open Source and can be embedded into your own web pages
+and web applications.
 
-* People in countries that sanction censorship and block services should be able to access it reliably.
-* Third parties (like Governments) should not be able to track users or listen to calls.
-* Users should be able to record calls to produce new media like podcasts.
+For more information on how to use Roll Call check out the
+[FAQ](https://rollcall.audio/faq.html).
 
----
+## Embedding
 
-Admittedly, Roll Call doesn’t accomplish all of this today, but what it does do today:
+Roll Call can easily be embedded on your own website. The easiest way is
+with a script include.
 
-* Reliable audio-only calls between multiple participants.
-* Audio files can be dragged into the call window and played into the call. (This is super fun, you can see it work in the gif above, why have I never seen this before?)
-* Call recording is built-in, with podcast quality recording of every participants local audio sent continuously to the recorder.
-* Relies on almost no infrastructure, the application is quite literally hosted in [gh-pages on GitHub](https://github.com/mikeal/roll-call/tree/gh-pages).
+```html
+<script src="https://cdn.jsdelivr.net/npm/roll-call@latest/dist/rollcall.js"></script>
+<my-container>
+  <roll-call call="myUniqueCallIdentifier"></roll-call>
+</my-container>
+```
 
----
+Roll Call uses WebComponents. This means that you can use it like
+any other HTML element and manipulate its state with JavaScript.
 
-Open Source **products** are quite rare, especially in modern open source. Many of the lessons I’ve learned about how to manage and scale open source may not apply, but I’m excited to see how this all turns out. Needless to say, I’ll be experimenting along the way with different approaches to governance and contribution policies that are participatory but also product centric.
+Or, if you want to build it into the JavaScript bundle for your own app
+you can do so easily, but you'll need to handle loading a WebComponents
+polyfill for most browsers on your own.
 
-If the goals of this project are interesting, take a look at what is being done and contribute!
+```javascript
+const { Call } = require('roll-call')
+
+let elem = new Call()
+elem.call = 'myUniqueCallIdentifier'
+document.body.appendChild(elem)
+```
+
+Once you require the script the elements are registered so you could also
+do something like this.
+
+```javascript
+require('roll-call')
+
+document.body.innerHTML += `<roll-call call="myUniqueCallIdentifier"></roll-call>`
+```
 
 ## To Develop
 
