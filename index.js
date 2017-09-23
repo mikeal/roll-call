@@ -7,10 +7,10 @@ if (!window.AudioContext && window.webkitAudioContext) {
   window.AudioContext = window.webkitAudioContext
 }
 
-const getChromeVersion = () => {
-  return true
-  // var raw = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)
-  // return raw ? parseInt(raw[2], 10) : false
+const getChromeVersion = (force) => {
+  if (force) return true
+  var raw = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)
+  return raw ? parseInt(raw[2], 10) > 59 : false
 }
 
 const each = (arr, fn) => Array.from(arr).forEach(fn)
@@ -55,26 +55,25 @@ const welcome =
   `
 
 const onlyChrome = `
-  <span class="onlychrome">Roll Call only works in latest Chrome :(</span>
+  <span class="onlychrome">Roll Call only works in latest <a href="https://www.google.com/chrome/browser/features.html">Chrome Browser</a> :(</span>
 `
 
 const help = `
   <a class="help" target="_blank" href="/faq.html">help -></a>
 `
 window.addEventListener('WebComponentsReady', () => {
-  if (window.location.search && getChromeVersion()) {
-    let url = new URL(window.location)
-    let room = url.searchParams.get('room')
-    if (room) {
-      require('./components')
-      container.innerHTML = `${help}<roll-call call="${room}"></roll-call>`
-      dragDrop('body', files => {
-        document.querySelector('roll-call').serveFiles(files)
-      })
-    }
+  let url = new URL(window.location)
+  let room = url.searchParams.get('room')
+  let force = url.searchParams.get('force')
+  if (window.location.search && getChromeVersion(force) && room) {
+    require('./components')
+    container.innerHTML = `${help}<roll-call call="${room}"></roll-call>`
+    dragDrop('body', files => {
+      document.querySelector('roll-call').serveFiles(files)
+    })
   } else {
     container.innerHTML = welcome
-    if (!getChromeVersion()) {
+    if (!getChromeVersion(force)) {
       document.querySelector('span.start-text').innerHTML = onlyChrome
     }
     each(document.querySelectorAll('welcome-message span'), elem => {
