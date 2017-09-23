@@ -1,6 +1,6 @@
 {
   "name": "roll-call",
-  "version": "0.5.1",
+  "version": "0.0.0-development",
   "description": "",
   "main": "components/index.js",
   "scripts": {
@@ -11,11 +11,12 @@
     "prepublish": "mkdir -p dist && browserify dist.js > dist/rollcall.js && cat dist/rollcall.js | minify > dist/rollcall.min.js",
     "precommit": "npm test",
     "prepush": "npm test",
-    "commitmsg": "validate-commit-msg"
+    "commitmsg": "validate-commit-msg",
+    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mikeal/roll-call.git"
+    "url": "https://github.com/mikeal/roll-call.git"
   },
   "keywords": [],
   "author": "Mikeal Rogers <mikeal.rogers@gmail.com> (http://www.mikealrogers.com)",
@@ -29,7 +30,8 @@
     "browserify": "^14.4.0",
     "budo": "^10.0.4",
     "husky": "^0.14.3",
-    "standard": "^10.0.3"
+    "standard": "^10.0.3",
+    "semantic-release": "^8.0.3"
   },
   "dependencies": {
     "bel": "^5.1.2",
