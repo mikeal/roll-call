@@ -8,6 +8,7 @@
     "build": "browserify index.js > bundle.js",
     "commit": "git-cz",
     "test": "standard",
+    "prepublish": "mkdir -p dist && browserify dist.js > dist/rollcall.js && cat dist/rollcall.js | minify > dist/rollcall.min.js",
     "precommit": "npm test",
     "prepush": "npm test",
     "commitmsg": "validate-commit-msg"
@@ -41,6 +42,7 @@
     "typedarray-to-buffer": "^3.1.2",
     "waudio": "^2.7.0",
     "xhr": "^2.4.0",
+    "zcomponent": "^1.0.1",
     "znode": "^1.1.3"
   }
 }
