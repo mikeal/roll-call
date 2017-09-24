@@ -1,8 +1,9 @@
 const bel = require('bel')
 const dragDrop = require('drag-drop')
+const getUserMedia = require('get-user-media-promise')
 const waudio = require('./waudio')
 const createSwarm = require('killa-beez')
-const ZComponent = require('./z-component')
+const ZComponent = require('zcomponent')
 const Peer = require('./peer')
 const RecordButton = require('./record')
 const getRTCConfig = require('../lib/getRTCConfig')
@@ -14,6 +15,10 @@ const getConfig = () => {
       else resolve(config)
     })
   })
+}
+
+const each = (arr, fn) => {
+  return Array.from(arr).forEach(fn)
 }
 
 class Call extends ZComponent {
@@ -41,8 +46,8 @@ class Call extends ZComponent {
       video: false
     }
     let [media, config] = await Promise.all([
-      await navigator.mediaDevices.getUserMedia(mediaopts),
-      await getConfig()
+      getUserMedia(mediaopts),
+      getConfig()
     ])
 
     let output = waudio(media)
@@ -76,8 +81,8 @@ class Call extends ZComponent {
     this.appendChild(elem)
   }
   serveFiles (files) {
-    this.serving = this.serving.concat([...files])
-    ;[...this.querySelectorAll('roll-call-peer')].forEach(peer => {
+    this.serving = this.serving.concat(Array.from(files))
+    each(this.querySelectorAll('roll-call-peer'), peer => {
       peer.serveFiles(files)
     })
   }

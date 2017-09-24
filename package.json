@@ -1,16 +1,27 @@
 {
   "name": "roll-call",
-  "version": "0.5.1",
+  "version": "0.0.0-development",
   "description": "",
   "main": "components/index.js",
   "scripts": {
     "start": "budo index.js:bundle.js",
     "build": "browserify index.js > bundle.js",
-    "test": "standard"
+    "commit": "git-cz",
+    "test": "standard",
+    "prepublish": "mkdir -p dist && browserify dist.js > dist/rollcall.js && cat dist/rollcall.js | minify > dist/rollcall.min.js",
+    "precommit": "npm test",
+    "prepush": "npm test",
+    "commitmsg": "validate-commit-msg",
+    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
+  },
+  "standard": {
+    "ignore": [
+      "dist"
+    ]
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mikeal/roll-call.git"
+    "url": "https://github.com/mikeal/roll-call.git"
   },
   "keywords": [],
   "author": "Mikeal Rogers <mikeal.rogers@gmail.com> (http://www.mikealrogers.com)",
@@ -23,18 +34,22 @@
     "babel-minify": "^0.2.0",
     "browserify": "^14.4.0",
     "budo": "^10.0.4",
-    "standard": "^10.0.3"
+    "husky": "^0.14.3",
+    "standard": "^10.0.3",
+    "semantic-release": "^8.0.3"
   },
   "dependencies": {
-    "bel": "^5.1.0",
+    "bel": "^5.1.2",
     "drag-drop": "^2.13.2",
+    "get-user-media-promise": "^1.1.1",
     "getusermedia": "^2.0.1",
     "killa-beez": "^3.3.0",
     "load-js": "^2.0.0",
     "once": "^1.4.0",
     "typedarray-to-buffer": "^3.1.2",
-    "waudio": "^2.6.0",
+    "waudio": "^2.7.0",
     "xhr": "^2.4.0",
+    "zcomponent": "^1.0.4",
     "znode": "^1.1.3"
   }
 }

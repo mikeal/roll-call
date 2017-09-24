@@ -3,10 +3,17 @@
 const container = document.body
 const dragDrop = require('drag-drop')
 
-const getChromeVersion = () => {
-  var raw = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)
-  return raw ? parseInt(raw[2], 10) : false
+if (!window.AudioContext && window.webkitAudioContext) {
+  window.AudioContext = window.webkitAudioContext
 }
+
+const getChromeVersion = (force) => {
+  if (force) return true
+  var raw = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)
+  return raw ? parseInt(raw[2], 10) > 59 : false
+}
+
+const each = (arr, fn) => Array.from(arr).forEach(fn)
 
 const random = () => Math.random().toString(36).substring(7)
 
@@ -48,35 +55,35 @@ const welcome =
   `
 
 const onlyChrome = `
-  <span class="onlychrome">Roll Call only works in latest Chrome :(</span>
+  <span class="onlychrome">Roll Call only works in latest <a href="https://www.google.com/chrome/browser/features.html">Chrome Browser</a> :(</span>
 `
 
 const help = `
   <a class="help" target="_blank" href="/faq.html">help -></a>
 `
-
-if (window.location.search && getChromeVersion()) {
+window.addEventListener('WebComponentsReady', () => {
   let url = new URL(window.location)
   let room = url.searchParams.get('room')
-  if (room) {
+  let force = url.searchParams.get('force')
+  if (window.location.search && getChromeVersion(force) && room) {
     require('./components')
     container.innerHTML = `${help}<roll-call call="${room}"></roll-call>`
     dragDrop('body', files => {
       document.querySelector('roll-call').serveFiles(files)
     })
-  }
-} else {
-  container.innerHTML = welcome
-  if (!getChromeVersion()) {
-    document.querySelector('span.start-text').innerHTML = onlyChrome
-  }
-  ;[...document.querySelectorAll('welcome-message span')].forEach(elem => {
-    elem.onclick = () => {
-      let room
-      if (elem.id === 'start-party') room = 'party'
-      else room = random()
-
-      window.location = window.location.pathname + '?room=' + room
+  } else {
+    container.innerHTML = welcome
+    if (!getChromeVersion(force)) {
+      document.querySelector('span.start-text').innerHTML = onlyChrome
     }
-  })
-}
+    each(document.querySelectorAll('welcome-message span'), elem => {
+      elem.onclick = () => {
+        let room
+        if (elem.id === 'start-party') room = 'party'
+        else room = random()
+
+        window.location = window.location.pathname + '?room=' + room
+      }
+    })
+  }
+})

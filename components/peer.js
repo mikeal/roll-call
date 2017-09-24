@@ -1,6 +1,6 @@
 /* globals FileReader */
 const waudio = require('./waudio')
-const ZComponent = require('./z-component')
+const ZComponent = require('zcomponent')
 const Visuals = require('./visuals')
 const Volume = require('./volume')
 const znode = require('znode')
@@ -8,6 +8,10 @@ const once = require('once')
 const dragDrop = require('drag-drop')
 const toBuffer = require('typedarray-to-buffer')
 const { Uploader, Downloader } = require('./files')
+
+const each = (arr, fn) => {
+  return Array.from(arr).forEach(fn)
+}
 
 let totalPeers = 0
 
@@ -59,7 +63,7 @@ class Peer extends ZComponent {
       this.disconnected = true
 
       let blockRemoval
-      ;[...this.childNodes].forEach(node => {
+      each(this.childNodes, node => {
         if (node.blockRemoval) blockRemoval = true
       })
 

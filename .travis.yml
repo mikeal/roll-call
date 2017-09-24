@@ -1,7 +1,13 @@
 language: node_js
-
+notifications:
+  email: false
+before_script:
+  - npm prune
+branches:
+  except:
+    - /^v\d+\.\d+\.\d+$/
 node_js:
-  - "8"
+  - '8'
 cache:
   directories:
     - node_modules
@@ -9,4 +15,5 @@ script:
   - npm run test
   - npm run build
 after_success:
+  - npm run semantic-release
   - ./scripts/deploy.sh
