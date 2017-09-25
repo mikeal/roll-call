@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Roll Call</title>
+    <link rel="shortcut icon" href="/favicon.png" type="image/png">
+    <style>
+      body {
+        margin: 0 0 0 0;
+        padding: 10px 10px 10px 10px;
+      }
+    </style>
+  </head>
+  <body class="body">
+    <a href="https://github.com/mikeal/roll-call" class="github-corner" aria-label="View source on Github"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#e0e1e2; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+
+    <style>
+      welcome-message {
+        font-family: Courier;
+        font-size: 20px;
+        display: flex;
+        justify-content: center;
+      }
+      faq-container {
+        max-width: 600px;
+      }
+      span#start-call, span#start-party, a,
+      span#start-call-link {
+        color: blue;
+        cursor: pointer;
+        text-decoration: none;
+      }
+      img {
+        max-width: 100%;
+      }
+      </style>
+      <welcome-message>
+        <faq-container>
+          <p>
+            Roll Call is a completely free<span id="start-party">🎉</span>
+            voice chat service with podcast quality recording.
+          </p>
+          <h2>FAQ (Frequently Asked Questions)</h2>
+          <p>
+            This page answers common questions and explains how
+            to use all the "hidden" features in Roll Call.
+          </p>
+          <ul>
+            <li><a href="#start-call">Basic calling.</a></li>
+            <li><a href="#podcast-quality">What does "podcast quality recording" mean?</a></li>
+          </ul>
+          <h4 id="podcast-quality">Basic calling.</h4>
+          <p>You can click the start link on the <a href="/">front page</a>, or just click
+            <span id="start-call-link">this</span> to start a new call.
+          </p>
+          <script>
+            const random = () => Math.random().toString(36).substring(7)
+            document.getElementById('start-call-link').onclick = () => {
+              window.location = '/?room=' + random()
+            }
+          </script>
+          <img src="https://file-tdrdlohaza.now.sh"></img>
+          <p>
+            You can invite other people to the call simply by sharing
+            the <strong>URL</strong> with anyone you'd like to have join. You can also modify the URL's <em>room</em> paramater to create something more permanent
+            that you and your friend can continue to return to.
+          </p>
+
+
+          <h4 id="podcast-quality">What does "podcast quality recording" mean?</h4>
+          <p>
+            You're probably used to hearing short delays
+            and clipping as the audio adjusts to bandwidth conditions
+            when using online calling tools.
+            When you record a call on Roll Call it does not record
+            the audio you're hearing, which is optimized for latency.
+          </p>
+          <p>
+            Roll Call records every participant <strong>locally</strong> and
+            sends that audio to the person who intiated the recording.
+            You'll notice when you initiate a recording that each the
+            element for each participant shows the status of their
+            recording. That includes the data transfered in real time.
+          </p>
+          <p>
+            Browsers are limited in the formats and bitrates they can record.
+            But the largest loss in quality during recording comes from the
+            tradeoffs of maintaining a realtime call, which we avoid.
+          </p>
+          <h4>How is this free?</h4>
+          <p>
+            Roll Call uses WebRTC, a peer-to-peer realtime standard for
+            browsers. This means that the infrastructure for the calls is
+            minimal and only used for signaling. The bulk of what would
+            normally cost money, like hosting fees, are unnecessary since
+            it's peer-to-peer, so this project remains free and entirely Open Source.
+          </p>
+          <p>
+            However, you can support the development of this project on
+            <a class="patreon" href="https://www.patreon.com/mikeal">Patreon</a>.
+            This helps
+            sustain the project and prioritize it over other open source
+            work.
+          </p>
+        </faq-container>
+      </welcome-message>
+
+  </body>
+</html>
