@@ -3,6 +3,12 @@
 Roll Call is a completely free🎉 voice chat service with podcast
 quality recording.
 
+<p>
+  <a href="https://www.patreon.com/bePatron?u=880479">
+    <img src="https://c5.patreon.com/external/logo/become_a_patron_button.png" height="40px" />
+  </a>
+</p>
+
 Go ahead and use it: [rollcall.audio](https://rollcall.audio)
 
 ![demo gif](https://file-vpbygpmpka.now.sh)
